@@ -13,6 +13,14 @@ impl Config {
     }
 }
 
+
+cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
+impl Layout {
+    fn new() -> Self {
+        unsafe { cpp!([] -> Layout as "agora::linuxsdk::VideoMixingLayout" {return agora::linuxsdk::VideoMixingLayout();}) }
+    }
+}
+
 cpp_class!(pub unsafe struct Recorder as "agora::AgoraSdk");
 impl Recorder {
     fn new() -> Self {
@@ -61,6 +69,17 @@ impl Recorder {
             )
         }
     }
+
+    fn set_video_mixing_layout(&self, layout: &Layout) -> u32 {
+        unsafe {
+            cpp!([  self as "agora::AgoraSdk*", 
+                    layout as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
+                
+                return self->setVideoMixingLayout(*layout);
+            })
+        }        
+    }
+
 }
 
 #[cfg(test)]
