@@ -80,6 +80,13 @@ impl Recorder {
         }        
     }
 
+    fn release(&self) -> bool {
+        unsafe {
+            cpp!([self as "agora::AgoraSdk*"] -> bool as "bool" {
+                return self->release();
+            })
+        }
+    }
 }
 
 #[cfg(test)]
