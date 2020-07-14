@@ -11,6 +11,24 @@ impl Config {
     fn new() -> Self {
         unsafe { cpp!([] -> Config as "agora::recording::RecordingConfig" {return agora::recording::RecordingConfig();}) }
     }
+
+    fn is_mixing_enabled(&self) -> bool {
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> bool as "bool" {
+                return self->isMixingEnabled;
+            })
+        }    
+    }
+
+    fn set_mixing_enabled(&self, enabled: bool) {
+        println!("set_mixing_enabled:{}", enabled);
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    enabled as "bool"] {
+                self->isMixingEnabled = enabled;
+            })
+        }    
+    }
 }
 
 
@@ -94,8 +112,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn create() {
-        let recorder = Recorder::new();
-
+    fn config_mixing_enabled() {
+        let config = Config::new();
+        assert!(true, config.is_mixing_enabled());
+        config.set_mixing_enabled(false);
+        // assert!(false, config.is_mixing_enabled());
     }
 }
