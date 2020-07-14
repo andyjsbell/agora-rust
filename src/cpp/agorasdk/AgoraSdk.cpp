@@ -40,7 +40,7 @@ AgoraSdk::AgoraSdk(): IRecordingEngineEventHandler()
     , m_keepLastFrame(false) 
 {
   m_engine = NULL;
-  m_stopped.store(false);
+  m_stopped = false;
   m_storage_dir = "./";
   m_layoutMode = DEFAULT_LAYOUT;
   m_maxVertPreLayoutUid = -1;

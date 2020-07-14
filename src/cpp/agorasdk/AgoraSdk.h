@@ -13,12 +13,12 @@
 #include "IAgoraLinuxSdkCommon.h"
 #include "IAgoraRecordingEngine.h"
 
-#include "base/atomic.h"
+//#include "base/atomic.h"
 #include "base/opt_parser.h" 
 
 namespace agora {
 
-using std::string;
+        using std::string;
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -234,7 +234,7 @@ class AgoraSdk : virtual public agora::recording::IRecordingEngineEventHandler {
         void onConnectionInterruptedImpl();
 
     protected:
-        atomic_bool_t m_stopped;
+        bool m_stopped;
         std::vector<agora::linuxsdk::uid_t> m_peers;
         std::string m_logdir;
         std::string m_storage_dir;
