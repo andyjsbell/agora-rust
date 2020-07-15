@@ -4,7 +4,6 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
 /*
-                config.isMixingEnabled = true;
                 config.mixedVideoAudio = agora::linuxsdk::MIXED_AV_CODEC_V2;
                 config.idleLimitSec = 10;
                 // config.decodeVideo = agora::linuxsdk::VIDEO_FORMAT_MIX_JPG_FILE_TYPE;
@@ -21,6 +20,35 @@ cpp!{{
     using std::string;
 }}
 
+#[derive(PartialEq, PartialOrd, Debug)]
+enum MixedAvCodecType {
+    MixedAvDefault = 0,  
+    MixedAvCodecV1 = 1,
+    MixedAvCodecV2 = 2,
+    Unknown = 3,
+}
+
+impl MixedAvCodecType {
+    fn value(&self) -> u32 {
+        match *self {
+            MixedAvCodecType::MixedAvDefault => 0,
+            MixedAvCodecType::MixedAvCodecV1 => 1,
+            MixedAvCodecType::MixedAvCodecV2 => 2,
+            MixedAvCodecType::Unknown => 3
+        }
+    }
+}
+
+impl From<u32> for MixedAvCodecType {
+    fn from(orig: u32) -> Self {
+        match orig {
+            0 => return MixedAvCodecType::MixedAvDefault,
+            1 => return MixedAvCodecType::MixedAvCodecV1,
+            2 => return MixedAvCodecType::MixedAvCodecV2,
+            _ => return MixedAvCodecType::Unknown
+        };
+    }
+}
 
 cpp_class!(pub unsafe struct Config as "agora::recording::RecordingConfig");
 impl Config {
@@ -86,6 +114,23 @@ impl Config {
         c.to_str()
     }
 
+    fn set_mixed_video_audio(&self, mixed_type: MixedAvCodecType) {
+        let mixed_type = mixed_type.value();
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    mixed_type as "agora::linuxsdk::MIXED_AV_CODEC_TYPE"] {
+                self->mixedVideoAudio = mixed_type;
+            })
+        }
+    }
+
+    fn mixed_video_audio(&self) -> MixedAvCodecType {
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "agora::linuxsdk::MIXED_AV_CODEC_TYPE" {
+                return self->mixedVideoAudio;
+            })
+        }.into()
+    }
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -195,5 +240,12 @@ mod tests {
         let path = config.config_path().unwrap();
 
         assert!(path == str);
+    }
+
+    #[test]
+    fn config_set_mixed_video_audio() {
+        let config = Config::new();
+        config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
+        assert!(config.mixed_video_audio() == MixedAvCodecType::MixedAvCodecV2);
     }
 }
