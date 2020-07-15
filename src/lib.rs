@@ -4,7 +4,6 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
 /*
-                config.idleLimitSec = 10;
                 // config.decodeVideo = agora::linuxsdk::VIDEO_FORMAT_MIX_JPG_FILE_TYPE;
                 config.channelProfile = agora::linuxsdk::CHANNEL_PROFILE_LIVE_BROADCASTING;
                 // config.captureInterval = 1;
@@ -45,6 +44,34 @@ impl From<u32> for MixedAvCodecType {
             1 => return MixedAvCodecType::MixedAvCodecV1,
             2 => return MixedAvCodecType::MixedAvCodecV2,
             _ => return MixedAvCodecType::Unknown
+        };
+    }
+}
+
+#[derive(PartialEq, PartialOrd, Debug)]
+enum ChannelProfile
+{
+    Communication = 0,
+    LiveBroadcast = 1,
+    Unknown = 2
+}
+
+impl ChannelProfile {
+    fn value(&self) -> u32 {
+        match *self {
+            ChannelProfile::Communication => 0,
+            ChannelProfile::LiveBroadcast => 1,
+            ChannelProfile::Unknown => 2
+        }
+    }
+}
+
+impl From<u32> for ChannelProfile {
+    fn from(orig: u32) -> Self {
+        match orig {
+            0 => return ChannelProfile::Communication,
+            1 => return ChannelProfile::LiveBroadcast,
+            _ => return ChannelProfile::Unknown
         };
     }
 }
@@ -145,6 +172,24 @@ impl Config {
                 return self->idleLimitSec;
             })
         }
+    }
+                
+    fn set_channel_profile(&self, profile: ChannelProfile) {
+        let profile = profile.value();
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    profile as "agora::linuxsdk::CHANNEL_PROFILE_TYPE"] {
+                self->channelProfile = profile;
+            })
+        }
+    }
+
+    fn channel_profile(&self) -> ChannelProfile {
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "agora::linuxsdk::CHANNEL_PROFILE_TYPE" {
+                return self->channelProfile;
+            })
+        }.into()
     }
 }
 
@@ -269,5 +314,12 @@ mod tests {
         let config = Config::new();
         config.set_idle_limit_sec(10);
         assert!(config.idle_limit_sec() == 10);
+    }
+    
+    #[test]
+    fn config_set_channel_profile() {
+        let config = Config::new();
+        config.set_channel_profile(ChannelProfile::LiveBroadcast);
+        assert!(config.channel_profile() == ChannelProfile::LiveBroadcast);
     }
 }
