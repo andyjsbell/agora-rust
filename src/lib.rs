@@ -3,10 +3,24 @@ use cpp::cpp_class;
 use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
+/*
+                config.isMixingEnabled = true;
+                config.mixedVideoAudio = agora::linuxsdk::MIXED_AV_CODEC_V2;
+                config.idleLimitSec = 10;
+                // config.decodeVideo = agora::linuxsdk::VIDEO_FORMAT_MIX_JPG_FILE_TYPE;
+                config.channelProfile = agora::linuxsdk::CHANNEL_PROFILE_LIVE_BROADCASTING;
+                // config.captureInterval = 1;
+                config.triggerMode = agora::linuxsdk::AUTOMATICALLY_MODE;
+                config.mixResolution = "640,480,15,500";
+
+                                config.mixResolution = &mixResolution[0u];
+                config.audioIndicationInterval = 0;
+*/
 cpp!{{
     #include "src/cpp/agorasdk/AgoraSdk.h"
     using std::string;
 }}
+
 
 cpp_class!(pub unsafe struct Config as "agora::recording::RecordingConfig");
 impl Config {
@@ -51,6 +65,27 @@ impl Config {
         let c = unsafe {CStr::from_ptr(p)};
         c.to_str()
     }
+
+    fn set_config_path(&self, path: &str) {
+        let path = CString::new(path).unwrap().into_raw();
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    path as "const char *"] {
+                self->cfgFilePath = path;
+            })
+        }
+    }
+
+    fn config_path(&self) -> Result<&str, std::str::Utf8Error> {
+        let p = unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> *const c_char as "const char *" {
+                return self->cfgFilePath;
+            })
+        } as *const i8;
+        let c = unsafe {CStr::from_ptr(p)};
+        c.to_str()
+    }
+
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -147,6 +182,17 @@ mod tests {
         config.set_recording_path(str);
         assert!(config.recording_path().is_ok());
         let path = config.recording_path().unwrap();
+
+        assert!(path == str);
+    }
+    
+    #[test]
+    fn config_set_config_path() {
+        let config = Config::new();
+        let str = "test";
+        config.set_config_path(str);
+        assert!(config.config_path().is_ok());
+        let path = config.config_path().unwrap();
 
         assert!(path == str);
     }
