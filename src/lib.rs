@@ -4,7 +4,6 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
 /*
-                config.mixedVideoAudio = agora::linuxsdk::MIXED_AV_CODEC_V2;
                 config.idleLimitSec = 10;
                 // config.decodeVideo = agora::linuxsdk::VIDEO_FORMAT_MIX_JPG_FILE_TYPE;
                 config.channelProfile = agora::linuxsdk::CHANNEL_PROFILE_LIVE_BROADCASTING;
@@ -131,6 +130,23 @@ impl Config {
             })
         }.into()
     }
+                
+    fn set_idle_limit_sec(&self, limit: u32) {
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    limit as "int"] {
+                self->idleLimitSec = limit;
+            })
+        }   
+    }
+
+    fn idle_limit_sec(&self) -> u32{
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "int" {
+                return self->idleLimitSec;
+            })
+        }
+    }
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -247,5 +263,12 @@ mod tests {
         let config = Config::new();
         config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
         assert!(config.mixed_video_audio() == MixedAvCodecType::MixedAvCodecV2);
+    }
+
+    #[test]
+    fn config_set_idel_limit_sec() {
+        let config = Config::new();
+        config.set_idle_limit_sec(10);
+        assert!(config.idle_limit_sec() == 10);
     }
 }
