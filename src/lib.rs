@@ -4,9 +4,6 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
 /*
-                // config.decodeVideo = agora::linuxsdk::VIDEO_FORMAT_MIX_JPG_FILE_TYPE;
-                config.channelProfile = agora::linuxsdk::CHANNEL_PROFILE_LIVE_BROADCASTING;
-                // config.captureInterval = 1;
                 config.triggerMode = agora::linuxsdk::AUTOMATICALLY_MODE;
                 config.mixResolution = "640,480,15,500";
 
@@ -17,6 +14,33 @@ cpp!{{
     #include "src/cpp/agorasdk/AgoraSdk.h"
     using std::string;
 }}
+
+#[derive(PartialEq, PartialOrd, Debug)]
+enum TriggerMode {
+    Automatic = 0,
+    Manual = 1,
+    Unknown = 2
+}
+
+impl TriggerMode {
+    fn value(&self) -> u32 {
+        match *self {
+            TriggerMode::Automatic => 0,
+            TriggerMode::Manual => 1,
+            TriggerMode::Unknown => 2
+        }
+    }
+}
+
+impl From<u32> for TriggerMode {
+    fn from(orig: u32) -> Self {
+        match orig {
+            0 => return TriggerMode::Automatic,
+            1 => return TriggerMode::Manual,
+            _ => return TriggerMode::Unknown
+        };
+    }
+}
 
 #[derive(PartialEq, PartialOrd, Debug)]
 enum MixedAvCodecType {
@@ -191,6 +215,24 @@ impl Config {
             })
         }.into()
     }
+
+    fn set_trigger_mode(&self, trigger: TriggerMode) {
+        let trigger = trigger.value();
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    trigger as "agora::linuxsdk::TRIGGER_MODE_TYPE"] {
+                self->triggerMode = trigger;
+            })
+        }
+    }
+
+    fn trigger_mode(&self) -> TriggerMode {
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "agora::linuxsdk::TRIGGER_MODE_TYPE" {
+                return self->triggerMode;
+            })
+        }.into()
+    }
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -321,5 +363,12 @@ mod tests {
         let config = Config::new();
         config.set_channel_profile(ChannelProfile::LiveBroadcast);
         assert!(config.channel_profile() == ChannelProfile::LiveBroadcast);
+    }
+    
+    #[test]
+    fn config_set_trigger_mode() {
+        let config = Config::new();
+        config.set_trigger_mode(TriggerMode::Automatic);
+        assert!(config.trigger_mode() == TriggerMode::Automatic);
     }
 }
