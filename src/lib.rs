@@ -280,11 +280,11 @@ impl Layout {
 
 cpp_class!(pub unsafe struct Recorder as "agora::AgoraSdk");
 impl Recorder {
-    fn new() -> Self {
+    pub fn new() -> Self {
         unsafe { cpp!([] -> Recorder as "agora::AgoraSdk" {return agora::AgoraSdk();}) }
     }
 
-    fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool {
+    pub fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool {
         
         let app_id = app_id.as_ptr();
         let name = name.as_ptr();
@@ -305,7 +305,7 @@ impl Recorder {
         }
     }
     
-    fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool) {
+    pub fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool) {
         unsafe {
             cpp!([self as "agora::AgoraSdk*",
                 width as "int",
@@ -318,7 +318,7 @@ impl Recorder {
         }
     }
 
-    fn leave_channel(&self) -> bool {
+    pub fn leave_channel(&self) -> bool {
         unsafe {
             cpp!([self as "agora::AgoraSdk*"] -> bool as "bool" {
                     return self->leaveChannel();
@@ -327,7 +327,7 @@ impl Recorder {
         }
     }
 
-    fn set_video_mixing_layout(&self, layout: &Layout) -> u32 {
+    pub fn set_video_mixing_layout(&self, layout: &Layout) -> u32 {
         unsafe {
             cpp!([  self as "agora::AgoraSdk*", 
                     layout as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
@@ -337,7 +337,7 @@ impl Recorder {
         }        
     }
 
-    fn release(&self) -> bool {
+    pub fn release(&self) -> bool {
         unsafe {
             cpp!([self as "agora::AgoraSdk*"] -> bool as "bool" {
                 return self->release();
