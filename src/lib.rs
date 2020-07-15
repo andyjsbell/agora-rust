@@ -64,7 +64,6 @@ impl Config {
     }
 
     fn set_mixing_enabled(&self, enabled: bool) {
-        println!("set_mixing_enabled:{}", enabled);
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
                     enabled as "bool"] {
