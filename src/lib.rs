@@ -114,8 +114,8 @@ mod tests {
     #[test]
     fn config_mixing_enabled() {
         let config = Config::new();
-        assert!(true, config.is_mixing_enabled());
-        config.set_mixing_enabled(false);
-        // assert!(false, config.is_mixing_enabled());
+        assert!(!config.is_mixing_enabled(), "should be false from the start");
+        config.set_mixing_enabled(true);
+        assert!(config.is_mixing_enabled(), "should be true after updating");
     }
 }
