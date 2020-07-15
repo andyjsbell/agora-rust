@@ -4,7 +4,6 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
 /*
-                config.triggerMode = agora::linuxsdk::AUTOMATICALLY_MODE;
                 config.mixResolution = "640,480,15,500";
 
                                 config.mixResolution = &mixResolution[0u];
@@ -233,6 +232,31 @@ impl Config {
             })
         }.into()
     }
+
+    fn set_mix_resolution(&self, width: u32, height: u32, fps: u32, kbps: u32) {
+        let mix_resolution = format!("{},{},{},{}", width, height, fps, kbps);
+        
+        let mix_resolution = CString::new(mix_resolution).unwrap().into_raw();
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    mix_resolution as "const char *"] {
+                self->mixResolution = mix_resolution;
+            })
+        }
+    }
+
+    fn mix_resolution(&self) -> (u32, u32, u32, u32) {
+        let p = unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> *const c_char as "const char *" {
+                return self->mixResolution;
+            })
+        } as *const i8;
+        let c = unsafe {CStr::from_ptr(p)};
+        let mix = c.to_str().unwrap();
+        let split = mix.split(",").collect::<Vec<_>>();
+        let vec: Vec<u32> = split.iter().map(|s| s.parse::<u32>().unwrap()).collect();
+        (vec[0], vec[1], vec[2], vec[3])
+    }
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -370,5 +394,15 @@ mod tests {
         let config = Config::new();
         config.set_trigger_mode(TriggerMode::Automatic);
         assert!(config.trigger_mode() == TriggerMode::Automatic);
+    }
+
+    #[test]
+    fn config_set_mixed_resolution() {
+        let config = Config::new();
+        config.set_mix_resolution(1920, 1080, 30, 2000);
+        assert!(config.mix_resolution().0 == 1920);
+        assert!(config.mix_resolution().1 == 1080);
+        assert!(config.mix_resolution().2 == 30);
+        assert!(config.mix_resolution().3 == 2000);
     }
 }
