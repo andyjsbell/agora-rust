@@ -3,12 +3,6 @@ use cpp::cpp_class;
 use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
-/*
-                config.mixResolution = "640,480,15,500";
-
-                                config.mixResolution = &mixResolution[0u];
-                config.audioIndicationInterval = 0;
-*/
 cpp!{{
     #include "src/cpp/agorasdk/AgoraSdk.h"
     using std::string;
@@ -257,6 +251,24 @@ impl Config {
         let vec: Vec<u32> = split.iter().map(|s| s.parse::<u32>().unwrap()).collect();
         (vec[0], vec[1], vec[2], vec[3])
     }
+
+    fn set_audio_indication_interval(&self, interval: u32) {
+        unsafe {
+            cpp!([  self as "agora::recording::RecordingConfig*",
+                    interval as "int"] {
+                self->audioIndicationInterval = interval;
+            })
+        }   
+    }
+
+    fn audio_indication_interval(&self) -> u32{
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "int" {
+                return self->audioIndicationInterval;
+            })
+        }
+    }
+
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -404,5 +416,12 @@ mod tests {
         assert!(config.mix_resolution().1 == 1080);
         assert!(config.mix_resolution().2 == 30);
         assert!(config.mix_resolution().3 == 2000);
+    }
+
+    #[test]
+    fn config_set_audio_indication_interval() {
+        let config = Config::new();
+        config.set_audio_indication_interval(10);
+        assert!(config.audio_indication_interval() == 10);
     }
 }
