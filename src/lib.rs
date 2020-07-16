@@ -4,6 +4,7 @@ use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
 
 cpp!{{
+    #include <iostream>
     #include "src/cpp/agorasdk/AgoraSdk.h"
     using std::string;
 }}
@@ -261,7 +262,7 @@ impl Config {
         }   
     }
 
-    fn audio_indication_interval(&self) -> u32{
+    fn audio_indication_interval(&self) -> u32 {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "int" {
                 return self->audioIndicationInterval;
@@ -278,27 +279,49 @@ impl Layout {
     }
 }
 
-cpp_class!(pub unsafe struct Recorder as "agora::AgoraSdk");
-impl Recorder {
-    pub fn new() -> Self {
-        unsafe { cpp!([] -> Recorder as "agora::AgoraSdk" {return agora::AgoraSdk();}) }
+pub struct AgoraSdk {
+    sdk: *mut u32,
+}
+
+impl AgoraSdk {
+    pub fn new() -> AgoraSdk {
+        let sdk = unsafe {
+            cpp!([] -> *mut u32  as "agora::AgoraSdk*" {
+                return new agora::AgoraSdk();
+            })
+        };
+
+        AgoraSdk {
+            sdk
+        }
+    }
+
+    pub fn set_keep_last_frame(&self, keep : bool) {
+        let me = self.sdk;
+        unsafe {
+            cpp!([me as "agora::AgoraSdk*", keep as "bool"] {
+                    return me->setKeepLastFrame(keep);
+                }
+            )
+        }
     }
 
     pub fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool {
         
+        let me = self.sdk;
         let app_id = app_id.as_ptr();
         let name = name.as_ptr();
         let channel_key = channel_key.as_ptr();
         
         unsafe {
-            cpp!([  self as "agora::AgoraSdk*", 
+            cpp!([  me as "agora::AgoraSdk*", 
                     app_id as "const char *",
                     channel_key as "const char *",
                     name as "const char *",
                     uid as "int",
                     config as "agora::recording::RecordingConfig*"
                     ] -> bool as "bool" {
-                        return self->createChannel(app_id, channel_key, name, uid, *config);
+                        return me->createChannel(app_id, channel_key, name, uid, *config);
                     }
 
             )
@@ -306,12 +329,13 @@ impl Recorder {
     }
     
     pub fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool) {
+        let me = self.sdk;
         unsafe {
-            cpp!([self as "agora::AgoraSdk*",
+            cpp!([me as "agora::AgoraSdk*",
                 width as "int",
                 height as "int", 
                 is_video_mix as "bool"] {
-                    self->updateMixModeSetting(width, height, is_video_mix);
+                    me->updateMixModeSetting(width, height, is_video_mix);
                 }
 
             )
@@ -319,31 +343,45 @@ impl Recorder {
     }
 
     pub fn leave_channel(&self) -> bool {
+        let me = self.sdk;
         unsafe {
-            cpp!([self as "agora::AgoraSdk*"] -> bool as "bool" {
-                    return self->leaveChannel();
+            cpp!([me as "agora::AgoraSdk*"] -> bool as "bool" {
+                    return me->leaveChannel();
                 }
             )
         }
     }
 
     pub fn set_video_mixing_layout(&self, layout: &Layout) -> u32 {
+        let me = self.sdk;
         unsafe {
-            cpp!([  self as "agora::AgoraSdk*", 
+            cpp!([  me as "agora::AgoraSdk*", 
                     layout as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
                 
-                return self->setVideoMixingLayout(*layout);
+                return me->setVideoMixingLayout(*layout);
             })
         }        
     }
 
     pub fn release(&self) -> bool {
+        let me = self.sdk;
         unsafe {
-            cpp!([self as "agora::AgoraSdk*"] -> bool as "bool" {
-                return self->release();
+            cpp!([me as "agora::AgoraSdk*"] -> bool as "bool" {
+                return me->release();
             })
         }
     }
+}
+
+impl Drop for AgoraSdk {
+    fn drop(&mut self) {
+        let me = self.sdk;
+        unsafe {
+            cpp!([me as "agora::AgoraSdk*"] {
+                delete me;
+            })
+        };
+    }    
 }
 
 #[cfg(test)]
@@ -351,77 +389,93 @@ mod tests {
     use super::*;
 
     #[test]
-    fn config_mixing_enabled() {
-        let config = Config::new();
-        assert!(!config.is_mixing_enabled(), "should be false from the start");
-        config.set_mixing_enabled(true);
-        assert!(config.is_mixing_enabled(), "should be true after updating");
+    fn recorder_keep_last_frame() {
+        // let sdk = AgoraSdk::new();
+        // let config = Config::new();
+        // testAgora.destroy();
+        // let sdk = AgoraSdk::new();
+        // let recorder = Recorder::new();
+        // recorder.set_keep_last_frame(true);
+        // unsafe {
+        //     cpp!([] {
+        //         agora::AgoraSdk sdk;
+        //     })
+        // }
+        let sdk = AgoraSdk::new();
     }
 
-    #[test]
-    fn config_set_recording_path() {
-        let config = Config::new();
-        let str = "test";
-        config.set_recording_path(str);
-        assert!(config.recording_path().is_ok());
-        let path = config.recording_path().unwrap();
+    // #[test]
+    // fn config_mixing_enabled() {
+    //     let config = Config::new();
+    //     assert!(!config.is_mixing_enabled(), "should be false from the start");
+    //     config.set_mixing_enabled(true);
+    //     assert!(config.is_mixing_enabled(), "should be true after updating");
+    // }
 
-        assert!(path == str);
-    }
+    // #[test]
+    // fn config_set_recording_path() {
+    //     let config = Config::new();
+    //     let str = "test";
+    //     config.set_recording_path(str);
+    //     assert!(config.recording_path().is_ok());
+    //     let path = config.recording_path().unwrap();
+
+    //     assert!(path == str);
+    // }
     
-    #[test]
-    fn config_set_config_path() {
-        let config = Config::new();
-        let str = "test";
-        config.set_config_path(str);
-        assert!(config.config_path().is_ok());
-        let path = config.config_path().unwrap();
+    // #[test]
+    // fn config_set_config_path() {
+    //     let config = Config::new();
+    //     let str = "test";
+    //     config.set_config_path(str);
+    //     assert!(config.config_path().is_ok());
+    //     let path = config.config_path().unwrap();
 
-        assert!(path == str);
-    }
+    //     assert!(path == str);
+    // }
 
-    #[test]
-    fn config_set_mixed_video_audio() {
-        let config = Config::new();
-        config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
-        assert!(config.mixed_video_audio() == MixedAvCodecType::MixedAvCodecV2);
-    }
+    // #[test]
+    // fn config_set_mixed_video_audio() {
+    //     let config = Config::new();
+    //     config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
+    //     assert!(config.mixed_video_audio() == MixedAvCodecType::MixedAvCodecV2);
+    // }
 
-    #[test]
-    fn config_set_idel_limit_sec() {
-        let config = Config::new();
-        config.set_idle_limit_sec(10);
-        assert!(config.idle_limit_sec() == 10);
-    }
+    // #[test]
+    // fn config_set_idel_limit_sec() {
+    //     let config = Config::new();
+    //     config.set_idle_limit_sec(10);
+    //     assert!(config.idle_limit_sec() == 10);
+    // }
     
-    #[test]
-    fn config_set_channel_profile() {
-        let config = Config::new();
-        config.set_channel_profile(ChannelProfile::LiveBroadcast);
-        assert!(config.channel_profile() == ChannelProfile::LiveBroadcast);
-    }
+    // #[test]
+    // fn config_set_channel_profile() {
+    //     let config = Config::new();
+    //     config.set_channel_profile(ChannelProfile::LiveBroadcast);
+    //     assert!(config.channel_profile() == ChannelProfile::LiveBroadcast);
+    // }
     
-    #[test]
-    fn config_set_trigger_mode() {
-        let config = Config::new();
-        config.set_trigger_mode(TriggerMode::Automatic);
-        assert!(config.trigger_mode() == TriggerMode::Automatic);
-    }
+    // #[test]
+    // fn config_set_trigger_mode() {
+    //     let config = Config::new();
+    //     config.set_trigger_mode(TriggerMode::Automatic);
+    //     assert!(config.trigger_mode() == TriggerMode::Automatic);
+    // }
 
-    #[test]
-    fn config_set_mixed_resolution() {
-        let config = Config::new();
-        config.set_mix_resolution(1920, 1080, 30, 2000);
-        assert!(config.mix_resolution().0 == 1920);
-        assert!(config.mix_resolution().1 == 1080);
-        assert!(config.mix_resolution().2 == 30);
-        assert!(config.mix_resolution().3 == 2000);
-    }
+    // #[test]
+    // fn config_set_mixed_resolution() {
+    //     let config = Config::new();
+    //     config.set_mix_resolution(1920, 1080, 30, 2000);
+    //     assert!(config.mix_resolution().0 == 1920);
+    //     assert!(config.mix_resolution().1 == 1080);
+    //     assert!(config.mix_resolution().2 == 30);
+    //     assert!(config.mix_resolution().3 == 2000);
+    // }
 
-    #[test]
-    fn config_set_audio_indication_interval() {
-        let config = Config::new();
-        config.set_audio_indication_interval(10);
-        assert!(config.audio_indication_interval() == 10);
-    }
+    // #[test]
+    // fn config_set_audio_indication_interval() {
+    //     let config = Config::new();
+    //     config.set_audio_indication_interval(10);
+    //     assert!(config.audio_indication_interval() == 10);
+    // }
 }
