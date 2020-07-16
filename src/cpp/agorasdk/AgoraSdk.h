@@ -18,7 +18,7 @@
 
 namespace agora {
 
-        using std::string;
+using std::string;
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -53,7 +53,6 @@ struct AudioFrameInfo {
         m_index(1)
     {};
 };
-
 
 class AgoraSdk : virtual public agora::recording::IRecordingEngineEventHandler {
     public:
@@ -247,8 +246,8 @@ class AgoraSdk : virtual public agora::recording::IRecordingEngineEventHandler {
         std::string m_maxVertPreLayoutUserAccount;
         bool m_receivingAudio;
         bool m_receivingVideo;
-				uint32_t m_mediaKeepTime;
-				mutable uint32_t m_lastAudioKeepTime;
+        uint32_t m_mediaKeepTime;
+        mutable uint32_t m_lastAudioKeepTime;
         mutable uint32_t m_lastVideoKeepTime;
         mutable std::unordered_map<unsigned int, AudioFrameInfo> m_audioFrameMap;
         std::unordered_set<uint32_t> m_subscribedVideoUids;
