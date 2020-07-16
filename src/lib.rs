@@ -394,78 +394,78 @@ mod tests {
         sdk.set_keep_last_frame(true);
     }
 
-    // #[test]
-    // fn config_mixing_enabled() {
-    //     let config = Config::new();
-    //     assert!(!config.is_mixing_enabled(), "should be false from the start");
-    //     config.set_mixing_enabled(true);
-    //     assert!(config.is_mixing_enabled(), "should be true after updating");
-    // }
+    #[test]
+    fn config_mixing_enabled() {
+        let config = Config::new();
+        assert!(!config.is_mixing_enabled(), "should be false from the start");
+        config.set_mixing_enabled(true);
+        assert!(config.is_mixing_enabled(), "should be true after updating");
+    }
 
-    // #[test]
-    // fn config_set_recording_path() {
-    //     let config = Config::new();
-    //     let str = "test";
-    //     config.set_recording_path(str);
-    //     assert!(config.recording_path().is_ok());
-    //     let path = config.recording_path().unwrap();
+    #[test]
+    fn config_set_recording_path() {
+        let config = Config::new();
+        let str = "test";
+        config.set_recording_path(str);
+        assert!(config.recording_path().is_ok());
+        let path = config.recording_path().unwrap();
 
-    //     assert!(path == str);
-    // }
+        assert!(path == str);
+    }
     
-    // #[test]
-    // fn config_set_config_path() {
-    //     let config = Config::new();
-    //     let str = "test";
-    //     config.set_config_path(str);
-    //     assert!(config.config_path().is_ok());
-    //     let path = config.config_path().unwrap();
+    #[test]
+    fn config_set_config_path() {
+        let config = Config::new();
+        let str = "test";
+        config.set_config_path(str);
+        assert!(config.config_path().is_ok());
+        let path = config.config_path().unwrap();
 
-    //     assert!(path == str);
-    // }
+        assert!(path == str);
+    }
 
-    // #[test]
-    // fn config_set_mixed_video_audio() {
-    //     let config = Config::new();
-    //     config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
-    //     assert!(config.mixed_video_audio() == MixedAvCodecType::MixedAvCodecV2);
-    // }
+    #[test]
+    fn config_set_mixed_video_audio() {
+        let config = Config::new();
+        config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
+        assert!(config.mixed_video_audio() == MixedAvCodecType::MixedAvCodecV2);
+    }
 
-    // #[test]
-    // fn config_set_idel_limit_sec() {
-    //     let config = Config::new();
-    //     config.set_idle_limit_sec(10);
-    //     assert!(config.idle_limit_sec() == 10);
-    // }
+    #[test]
+    fn config_set_idel_limit_sec() {
+        let config = Config::new();
+        config.set_idle_limit_sec(10);
+        assert!(config.idle_limit_sec() == 10);
+    }
     
-    // #[test]
-    // fn config_set_channel_profile() {
-    //     let config = Config::new();
-    //     config.set_channel_profile(ChannelProfile::LiveBroadcast);
-    //     assert!(config.channel_profile() == ChannelProfile::LiveBroadcast);
-    // }
+    #[test]
+    fn config_set_channel_profile() {
+        let config = Config::new();
+        config.set_channel_profile(ChannelProfile::LiveBroadcast);
+        assert!(config.channel_profile() == ChannelProfile::LiveBroadcast);
+    }
     
-    // #[test]
-    // fn config_set_trigger_mode() {
-    //     let config = Config::new();
-    //     config.set_trigger_mode(TriggerMode::Automatic);
-    //     assert!(config.trigger_mode() == TriggerMode::Automatic);
-    // }
+    #[test]
+    fn config_set_trigger_mode() {
+        let config = Config::new();
+        config.set_trigger_mode(TriggerMode::Automatic);
+        assert!(config.trigger_mode() == TriggerMode::Automatic);
+    }
 
-    // #[test]
-    // fn config_set_mixed_resolution() {
-    //     let config = Config::new();
-    //     config.set_mix_resolution(1920, 1080, 30, 2000);
-    //     assert!(config.mix_resolution().0 == 1920);
-    //     assert!(config.mix_resolution().1 == 1080);
-    //     assert!(config.mix_resolution().2 == 30);
-    //     assert!(config.mix_resolution().3 == 2000);
-    // }
+    #[test]
+    fn config_set_mixed_resolution() {
+        let config = Config::new();
+        config.set_mix_resolution(1920, 1080, 30, 2000);
+        assert!(config.mix_resolution().0 == 1920);
+        assert!(config.mix_resolution().1 == 1080);
+        assert!(config.mix_resolution().2 == 30);
+        assert!(config.mix_resolution().3 == 2000);
+    }
 
-    // #[test]
-    // fn config_set_audio_indication_interval() {
-    //     let config = Config::new();
-    //     config.set_audio_indication_interval(10);
-    //     assert!(config.audio_indication_interval() == 10);
-    // }
+    #[test]
+    fn config_set_audio_indication_interval() {
+        let config = Config::new();
+        config.set_audio_indication_interval(10);
+        assert!(config.audio_indication_interval() == 10);
+    }
 }
