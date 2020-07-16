@@ -390,18 +390,8 @@ mod tests {
 
     #[test]
     fn recorder_keep_last_frame() {
-        // let sdk = AgoraSdk::new();
-        // let config = Config::new();
-        // testAgora.destroy();
-        // let sdk = AgoraSdk::new();
-        // let recorder = Recorder::new();
-        // recorder.set_keep_last_frame(true);
-        // unsafe {
-        //     cpp!([] {
-        //         agora::AgoraSdk sdk;
-        //     })
-        // }
         let sdk = AgoraSdk::new();
+        sdk.set_keep_last_frame(true);
     }
 
     // #[test]
