@@ -286,6 +286,60 @@ impl Layout {
     fn new() -> Self {
         unsafe { cpp!([] -> Layout as "agora::linuxsdk::VideoMixingLayout" {return agora::linuxsdk::VideoMixingLayout();}) }
     }
+
+    fn set_canvas_width(&self, width: u32) {
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                    width as "int"] {
+                self->canvasWidth = width;
+            })
+        }   
+    }
+
+    fn canvas_width(&self) -> u32 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
+                return self->canvasWidth;
+            })
+        }
+    }
+    
+    fn set_canvas_height(&self, height: u32) {
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                    height as "int"] {
+                self->canvasHeight = height;
+            })
+        }   
+    }
+
+    fn canvas_height(&self) -> u32 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
+                return self->canvasHeight;
+            })
+        }
+    }
+
+    fn set_background_rgb(&self, rgb: &str) {
+        let rgb = CString::new(rgb).unwrap().into_raw();
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                    rgb as "const char *"] {
+                self->backgroundColor = rgb;
+            })
+        }
+    }
+
+    fn background_rgb(&self) -> Result<&str, std::str::Utf8Error> {
+        let p = unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout*"] -> *const c_char as "const char *" {
+                return self->backgroundColor;
+            })
+        } as *const i8;
+        let c = unsafe {CStr::from_ptr(p)};
+        c.to_str()
+    }
 }
 
 cpp!{{
