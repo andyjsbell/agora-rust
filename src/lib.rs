@@ -282,16 +282,27 @@ impl Layout {
 cpp!{{
     class AgoraSdk : public agora::AgoraSdk {
     protected:
-       virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) override {
-            rust!(My_Rust_MethodImpl [this : AgoraSdk as "AgoraSdk*", error : u32 as "int", stat_code : u32 as "int"] {
+        virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) override {
+            rust!(OnErrorImpl [this : AgoraSdk as "AgoraSdk*", error : u32 as "int", stat_code : u32 as "int"] {
                 this.on_error(error, stat_code);
             });
-       }
+        }
+
+        virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) override {
+            rust!(OnUserImpl [this : AgoraSdk as "AgoraSdk*", uid : u32 as "int"] {
+                this.on_user_joined(uid);
+            });
+        }
     };
 }}
 
+trait AgoraSdkEvents {
+    fn on_error(&self, error: u32, stat_code: u32);
+    fn on_user_joined(&self, uid: u32);
+}
+
 pub struct AgoraSdk {
-    sdk: *mut u32,
+    sdk: *mut u32
 }
 
 impl AgoraSdk {
@@ -382,10 +393,6 @@ impl AgoraSdk {
             })
         }
     }
-
-    fn on_error(&self, error: u32, stat_code: u32) {
-        println!("event - {} {}", error, stat_code)
-    }
 }
 
 impl Drop for AgoraSdk {
@@ -399,9 +406,42 @@ impl Drop for AgoraSdk {
     }    
 }
 
+impl AgoraSdkEvents for AgoraSdk {
+    
+    fn on_error(&self, error: u32, stat_code: u32) {
+        println!("on_error - {} {}", error, stat_code)
+    }
+
+    fn on_user_joined(&self, uid: u32) {
+        println!("on_user_joined - {}", uid)
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{thread, time};
+
+    #[test]
+    fn recorder_create() {
+        let sdk = AgoraSdk::new();
+        let config = Config::new();
+        config.set_mixing_enabled(true);
+        config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
+        config.set_idle_limit_sec(10);        
+        config.set_channel_profile(ChannelProfile::LiveBroadcast);
+        config.set_trigger_mode(TriggerMode::Automatic);
+        config.set_mix_resolution(640, 480, 15, 500);        
+        config.set_audio_indication_interval(0);
+        assert!(sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", "a9703b15-62c7-4854-adf3-7fde735e04a3", 0, &config));
+        thread::sleep(time::Duration::from_millis(200));
+        sdk.release();
+    }
+
+    #[test]
+    fn recorder_release() {
+        let sdk = AgoraSdk::new();
+        assert!(sdk.release());
+    }
 
     #[test]
     fn recorder_keep_last_frame() {
