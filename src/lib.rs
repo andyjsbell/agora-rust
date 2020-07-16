@@ -100,6 +100,15 @@ impl Config {
         unsafe { cpp!([] -> Config as "agora::recording::RecordingConfig" {return agora::recording::RecordingConfig();}) }
     }
 
+    fn set_app_lite_dir(&self, dir: &str) {
+        let dir = CString::new(dir).unwrap().into_raw();
+        unsafe {
+            cpp!([self as "agora::recording::RecordingConfig*", dir as "const char *"] {
+                self->appliteDir = dir;
+            })
+        }
+    }
+
     fn is_mixing_enabled(&self) -> bool {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> bool as "bool" {
@@ -421,20 +430,22 @@ mod tests {
     use super::*;
     use std::{thread, time};
 
+    // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
     fn recorder_create() {
         let sdk = AgoraSdk::new();
         let config = Config::new();
+        
+        config.set_app_lite_dir("/home/andy/devel");
         config.set_mixing_enabled(true);
         config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
         config.set_idle_limit_sec(10);        
         config.set_channel_profile(ChannelProfile::LiveBroadcast);
         config.set_trigger_mode(TriggerMode::Automatic);
-        config.set_mix_resolution(640, 480, 15, 500);        
+        config.set_mix_resolution(1920, 1080, 15, 4000);        
         config.set_audio_indication_interval(0);
         assert!(sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", "a9703b15-62c7-4854-adf3-7fde735e04a3", 0, &config));
-        thread::sleep(time::Duration::from_millis(200));
-        sdk.release();
+        thread::sleep(time::Duration::from_millis(10000));
     }
 
     #[test]
