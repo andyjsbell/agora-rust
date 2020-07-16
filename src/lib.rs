@@ -279,6 +279,17 @@ impl Layout {
     }
 }
 
+cpp!{{
+    class AgoraSdk : public agora::AgoraSdk {
+    protected:
+       virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) override {
+            rust!(My_Rust_MethodImpl [this : AgoraSdk as "AgoraSdk*", error : u32 as "int", stat_code : u32 as "int"] {
+                this.on_error(error, stat_code);
+            });
+       }
+    };
+}}
+
 pub struct AgoraSdk {
     sdk: *mut u32,
 }
@@ -286,8 +297,8 @@ pub struct AgoraSdk {
 impl AgoraSdk {
     pub fn new() -> AgoraSdk {
         let sdk = unsafe {
-            cpp!([] -> *mut u32  as "agora::AgoraSdk*" {
-                return new agora::AgoraSdk();
+            cpp!([] -> *mut u32  as "AgoraSdk*" {
+                return new AgoraSdk();
             })
         };
 
@@ -299,7 +310,7 @@ impl AgoraSdk {
     pub fn set_keep_last_frame(&self, keep : bool) {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "agora::AgoraSdk*", keep as "bool"] {
+            cpp!([me as "AgoraSdk*", keep as "bool"] {
                     return me->setKeepLastFrame(keep);
                 }
             )
@@ -314,7 +325,7 @@ impl AgoraSdk {
         let channel_key = CString::new(channel_key).unwrap().into_raw();
         
         unsafe {
-            cpp!([  me as "agora::AgoraSdk*", 
+            cpp!([  me as "AgoraSdk*", 
                     app_id as "const char *",
                     channel_key as "const char *",
                     name as "const char *",
@@ -331,7 +342,7 @@ impl AgoraSdk {
     pub fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool) {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "agora::AgoraSdk*",
+            cpp!([me as "AgoraSdk*",
                 width as "int",
                 height as "int", 
                 is_video_mix as "bool"] {
@@ -345,7 +356,7 @@ impl AgoraSdk {
     pub fn leave_channel(&self) -> bool {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "agora::AgoraSdk*"] -> bool as "bool" {
+            cpp!([me as "AgoraSdk*"] -> bool as "bool" {
                     return me->leaveChannel();
                 }
             )
@@ -355,7 +366,7 @@ impl AgoraSdk {
     pub fn set_video_mixing_layout(&self, layout: &Layout) -> u32 {
         let me = self.sdk;
         unsafe {
-            cpp!([  me as "agora::AgoraSdk*", 
+            cpp!([  me as "AgoraSdk*", 
                     layout as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
                 
                 return me->setVideoMixingLayout(*layout);
@@ -366,10 +377,14 @@ impl AgoraSdk {
     pub fn release(&self) -> bool {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "agora::AgoraSdk*"] -> bool as "bool" {
+            cpp!([me as "AgoraSdk*"] -> bool as "bool" {
                 return me->release();
             })
         }
+    }
+
+    fn on_error(&self, error: u32, stat_code: u32) {
+        println!("event - {} {}", error, stat_code)
     }
 }
 
@@ -377,7 +392,7 @@ impl Drop for AgoraSdk {
     fn drop(&mut self) {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "agora::AgoraSdk*"] {
+            cpp!([me as "AgoraSdk*"] {
                 delete me;
             })
         };
