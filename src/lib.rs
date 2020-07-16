@@ -309,9 +309,9 @@ impl AgoraSdk {
     pub fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool {
         
         let me = self.sdk;
-        let app_id = app_id.as_ptr();
-        let name = name.as_ptr();
-        let channel_key = channel_key.as_ptr();
+        let app_id = CString::new(app_id).unwrap().into_raw();
+        let name = CString::new(name).unwrap().into_raw();
+        let channel_key = CString::new(channel_key).unwrap().into_raw();
         
         unsafe {
             cpp!([  me as "agora::AgoraSdk*", 
