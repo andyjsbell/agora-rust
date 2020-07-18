@@ -340,6 +340,38 @@ impl Layout {
         let c = unsafe {CStr::from_ptr(p)};
         c.to_str()
     }
+
+    fn set_region_count(&self, count: u32) {
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                    count as "int"] {
+                self->regionCount = count;
+            })
+        }  
+    }
+
+    fn set_region(&self, index: u32, x: u32, y: u32, width: u32, height: u32, uid: u32) {
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                    index as "int",
+                    x as "int",
+                    y as "int",
+                    width as "int",
+                    height as "int",
+                    uid as "int"] {
+                
+                agora::linuxsdk::VideoMixingLayout::Region * regionList = new agora::linuxsdk::VideoMixingLayout::Region[1];
+                regionList[0].uid = uid;
+                regionList[0].x = 0;
+                regionList[0].uid = 0;
+                regionList[0].width = 320;
+                regionList[0].height = 240;
+                regionList[0].alpha = 1;
+                regionList[0].renderMode = 0;
+                self->regions = regionList;
+            })
+        }  
+    }
 }
 
 cpp!{{
@@ -359,17 +391,13 @@ cpp!{{
     };
 }}
 
-trait AgoraSdkEvents {
-    fn on_error(&self, error: u32, stat_code: u32);
-    fn on_user_joined(&self, uid: u32);
+pub struct AgoraSdk {
+    sdk: *mut u32,
 }
 
-pub struct AgoraSdk {
-    sdk: *mut u32
-}
 
 impl AgoraSdk {
-    pub fn new() -> AgoraSdk {
+    pub fn new() -> Self {
         let sdk = unsafe {
             cpp!([] -> *mut u32  as "AgoraSdk*" {
                 return new AgoraSdk();
@@ -377,7 +405,7 @@ impl AgoraSdk {
         };
 
         AgoraSdk {
-            sdk
+            sdk,
         }
     }
 
@@ -456,6 +484,20 @@ impl AgoraSdk {
             })
         }
     }
+         
+    fn on_error(&self, error: u32, stat_code: u32) {
+        println!("on_error - {} {}", error, stat_code)
+    }
+
+    fn on_user_joined(&self, uid: u32) {
+        let layout = Layout::new();
+        layout.set_canvas_width(640);
+        layout.set_canvas_height(480);
+        layout.set_background_rgb("#00ff00");
+        self.set_video_mixing_layout(&layout);
+        
+        println!("on_user_joined - {}", uid)
+    }
 }
 
 impl Drop for AgoraSdk {
@@ -469,16 +511,6 @@ impl Drop for AgoraSdk {
     }    
 }
 
-impl AgoraSdkEvents for AgoraSdk {
-    
-    fn on_error(&self, error: u32, stat_code: u32) {
-        println!("on_error - {} {}", error, stat_code)
-    }
-
-    fn on_user_joined(&self, uid: u32) {
-        println!("on_user_joined - {}", uid)
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -489,17 +521,27 @@ mod tests {
     fn recorder_create() {
         let sdk = AgoraSdk::new();
         let config = Config::new();
-        
+           
         config.set_app_lite_dir("/home/andy/devel");
         config.set_mixing_enabled(true);
         config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
-        config.set_idle_limit_sec(10);        
+        config.set_idle_limit_sec(300);        
         config.set_channel_profile(ChannelProfile::LiveBroadcast);
         config.set_trigger_mode(TriggerMode::Automatic);
-        config.set_mix_resolution(1920, 1080, 15, 4000);        
+        config.set_mix_resolution(640, 480, 15, 500);        
         config.set_audio_indication_interval(0);
-        assert!(sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", "a9703b15-62c7-4854-adf3-7fde735e04a3", 0, &config));
-        thread::sleep(time::Duration::from_millis(10000));
+        
+        sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", "a9703b15-62c7-4854-adf3-7fde735e04a3", 0, &config);
+        
+        let mut cb = || {
+            sdk.leave_channel();
+        };
+
+        sdk.set_callback(cb);
+        sdk.release();
+        cb();
+        
+        thread::sleep(time::Duration::from_millis(20000));
     }
 
     #[test]
