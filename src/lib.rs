@@ -635,6 +635,7 @@ impl AgoraSdk {
 
 impl Drop for AgoraSdk {
     fn drop(&mut self) {
+        self.leave_channel();
         let me = self.sdk;
         unsafe {
             cpp!([me as "agora::AgoraSdk*"] {
