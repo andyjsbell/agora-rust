@@ -363,10 +363,9 @@ impl Layout {
                 
                 agora::linuxsdk::VideoMixingLayout::Region * regionList = new agora::linuxsdk::VideoMixingLayout::Region[1];
                 regionList[0].uid = uid;
-                regionList[0].x = 0;
-                regionList[0].uid = 0;
-                regionList[0].width = 320;
-                regionList[0].height = 240;
+                regionList[0].x = x;
+                regionList[0].width = width;
+                regionList[0].height = height;
                 regionList[0].alpha = 1;
                 regionList[0].renderMode = 0;
                 self->regions = regionList;
@@ -655,15 +654,12 @@ mod tests {
     fn recorder_create() {
         
         let mut events = AgoraSdkEvents::new();
+        let mut sdk = AgoraSdk::new();
+        sdk.set_handler(&events);
+
         events.set_on_error(|error, stat_code| {
             println!("on_error -> {} {}", error, stat_code);
         });
-        events.set_on_user_joined(|uid| {
-            println!("on_user_joined -> {}", uid);            
-        });
-        
-        let mut sdk = AgoraSdk::new();
-        sdk.set_handler(&events);
 
         let config = Config::new();
            
@@ -675,9 +671,20 @@ mod tests {
         config.set_trigger_mode(TriggerMode::Automatic);
         config.set_mix_resolution(640, 480, 15, 500);        
         config.set_audio_indication_interval(0);
+        
         let channel = "demo";
         sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
+        events.set_on_user_joined(move |uid| {
+            println!("on_user_joined -> {}", uid);   
+            let layout = Layout::new();
+            layout.set_region_count(1);
+            layout.set_region(0, 0, 0, 1, 1, uid);
+            layout.set_background_rgb("#00ff00");
+
+            sdk.set_video_mixing_layout(&layout);
+        });
+
         thread::sleep(time::Duration::from_millis(20000));
     }
 
