@@ -654,7 +654,7 @@ mod tests {
     #[test]
     fn recorder_create() {
         
-        let events = AgoraSdkEvents::new();
+        let mut events = AgoraSdkEvents::new();
         events.set_on_error(|error, stat_code| {
             println!("on_error -> {} {}", error, stat_code);
         });
@@ -662,7 +662,7 @@ mod tests {
             println!("on_user_joined -> {}", uid);            
         });
         
-        let sdk = AgoraSdk::new();
+        let mut sdk = AgoraSdk::new();
         sdk.set_handler(&events);
 
         let config = Config::new();
@@ -675,8 +675,8 @@ mod tests {
         config.set_trigger_mode(TriggerMode::Automatic);
         config.set_mix_resolution(640, 480, 15, 500);        
         config.set_audio_indication_interval(0);
-        
-        sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", "a9703b15-62c7-4854-adf3-7fde735e04a3", 0, &config);
+        let channel = "demo";
+        sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
         thread::sleep(time::Duration::from_millis(20000));
     }
