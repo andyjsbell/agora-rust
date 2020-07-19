@@ -117,6 +117,11 @@ class AgoraSdk {
     public:
         AgoraSdk(agora::recording::IRecordingEngineEventHandler * handler = nullptr);
         virtual ~AgoraSdk();
+        virtual void setHandler(agora::recording::IRecordingEngineEventHandler * handler) {
+            if (m_handler == nullptr) {
+                m_handler = handler;
+            }
+        }
 
         virtual bool createChannel(const string &appid, const string &channelKey, const string &name,  agora::linuxsdk::uid_t uid,
                 agora::recording::RecordingConfig &config);
