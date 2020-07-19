@@ -685,7 +685,7 @@ mod tests {
             sdk.set_video_mixing_layout(&layout);
         });
 
-        thread::sleep(time::Duration::from_millis(20000));
+        thread::sleep(time::Duration::from_millis(5000));
     }
 
     #[test]
