@@ -394,6 +394,7 @@ impl Layout {
 
 pub trait CallbackTrait {
     fn on_error(&mut self, error: u32, stat_code: u32);
+    fn on_user_joined(&mut self, uid: u32);
 }
 
 cpp!{{ 
@@ -409,7 +410,7 @@ cpp!{{
             });
         }
         
-        virtual void onWarning(int /*warn*/) {
+        virtual void onWarning(int warn) {
         }
         virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
         }
@@ -417,6 +418,9 @@ cpp!{{
         }
     
         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
+            rust!(OnUserJoinedImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", uid: u32 as "int"] {
+                callback.on_user_joined(uid)
+            });
         }
     
         virtual void onRemoteVideoStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
@@ -466,17 +470,23 @@ cpp!{{
 
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
-    on_error: Box<dyn FnMut(u32, u32)>,
+    on_error: Option<Box<dyn FnMut(u32, u32)>>,
+    on_user_joined: Option<Box<dyn FnMut(u32)>>,    
 }
 
 impl CallbackTrait for AgoraSdkEvents {
+    
     fn on_error(&mut self, error: u32, stat_code: u32) {
-        (self.on_error)(error, stat_code);
+        self.on_error.as_mut().unwrap()(error, stat_code);
+    }
+
+    fn on_user_joined(&mut self, uid: u32) {
+        self.on_user_joined.as_mut().unwrap()(uid);
     }
 }
 
 impl AgoraSdkEvents {
-    pub fn new(on_error: impl FnMut(u32, u32) + 'static) -> Self {
+    pub fn new() -> Self {
         let rawptr = unsafe {
             cpp!([] -> *mut u32  as "agora::recording::IRecordingEngineEventHandler*" {
                 return new AgoraSdkEvents();
@@ -485,8 +495,17 @@ impl AgoraSdkEvents {
 
         AgoraSdkEvents {
             rawptr,
-            on_error: Box::new(on_error)
+            on_error: None,
+            on_user_joined: None,
         }
+    }
+
+    pub fn set_on_error(&mut self, on_error: impl FnMut(u32, u32) + 'static) {
+        self.on_error = Some(Box::new(on_error))
+    }
+
+    pub fn set_on_user_joined(&mut self, on_user_joined: impl FnMut(u32) + 'static) {
+        self.on_user_joined = Some(Box::new(on_user_joined))
     }
 
     pub fn connect(&self) {
@@ -499,9 +518,6 @@ impl AgoraSdkEvents {
             })
         } 
     }
-    // pub fn set_callback(&mut self, callback: impl FnMut() + 'static) {
-    //     self.callback = Some(Box::new(callback));
-    // }
 }
 
 pub struct AgoraSdk {
@@ -621,11 +637,18 @@ mod tests {
     #[test]
     fn recorder_create() {
         
-        let mut on_error = |u32, u32| {
-            sdk.leave_channel();
+        let mut on_error = |error, stat_code| {
+            println!("on_error -> {} {}", error, stat_code);
         };
         
-        let events = AgoraSdkEvents::new(on_error);
+        let mut on_user_joined = |uid| {
+            println!("on_user_joined -> {}", uid);            
+        };
+
+        let events = AgoraSdkEvents::new();
+        events.set_on_error(on_error);
+        events.set_on_user_joined(on_user_joined);
+        
         let sdk = AgoraSdk::new(&events);
         let config = Config::new();
            
