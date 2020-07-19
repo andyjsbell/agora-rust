@@ -30,14 +30,15 @@ void SplitString(const std::string& s, std::set<std::string>& v, const std::stri
     v.insert(s.substr(pos1));
 }
 
-AgoraSdk::AgoraSdk(): IRecordingEngineEventHandler() 
-    , m_level(agora::linuxsdk::AGORA_LOG_LEVEL_INFO)
+AgoraSdk::AgoraSdk(agora::recording::IRecordingEngineEventHandler * handler) :
+    m_level(agora::linuxsdk::AGORA_LOG_LEVEL_INFO)
     , m_mediaKeepTime(0)
     , m_lastAudioKeepTime(0)
     , m_lastVideoKeepTime(0)
     , m_subscribedVideoUids()
     , m_subscribedAudioUids()
-    , m_keepLastFrame(false) 
+    , m_keepLastFrame(false)
+    , m_handler(handler)
 {
   m_engine = NULL;
   m_stopped = false;
@@ -84,7 +85,7 @@ bool AgoraSdk::createChannel(const string &appid, const string &channelKey, cons
   if (m_engine)
     return false;
 
-  if ((m_engine = agora::recording::IRecordingEngine::createAgoraRecordingEngine(appid.c_str(), this)) == NULL)
+  if ((m_engine = agora::recording::IRecordingEngine::createAgoraRecordingEngine(appid.c_str(), this->m_handler)) == NULL)
       return false;
 
   m_engine->setLogLevel(m_level);
@@ -118,7 +119,7 @@ bool AgoraSdk::createChannelWithUserAccount(const string &appid, const string &c
   if (m_engine)
     return false;
 
-  if ((m_engine = agora::recording::IRecordingEngine::createAgoraRecordingEngine(appid.c_str(), this)) == NULL)
+  if ((m_engine = agora::recording::IRecordingEngine::createAgoraRecordingEngine(appid.c_str(), this->m_handler)) == NULL)
       return false;
 
   m_engine->setLogLevel(m_level);
@@ -305,124 +306,6 @@ const agora::recording::RecordingEngineProperties* AgoraSdk::getRecorderProperti
     return m_engine->getProperties();
 }
 
-void AgoraSdk::onErrorImpl(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) {
-    cerr << "Error: " << error <<",with stat_code:"<< stat_code << endl;
-    stoppedOnError();
-}
-
-void AgoraSdk::onWarningImpl(int warn) {
-    cerr << "warn: " << warn << endl;
-    if(static_cast<int>(linuxsdk::WARN_RECOVERY_CORE_SERVICE_FAILURE) == warn) {
-    cerr << "clear peer list " << endl;
-        m_peers.clear();
-    }
-    //  leaveChannel();
-}
-
-void AgoraSdk::onJoinChannelSuccessImpl(const char * channelId, agora::linuxsdk::uid_t uid) {
-    cout << "join channel Id: " << channelId << ", with uid: " << uid << endl;
-}
-
-void AgoraSdk::onRejoinChannelSuccess(const char* channelId, uid_t uid) {
-  cout << "rejoin channel id : " << channelId << ", width uid: " << uid << endl;
-}
-
-void AgoraSdk::onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason) {
-  (void) state;
-  (void) reason;
-  //cout << __FUNCTION__ << ", state : " << state << ", reason: " << reason << endl;
-}
-
-void AgoraSdk::onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats) {
-  (void) stats;
-  (void) uid;
-  /*
-  cout << __FUNCTION__ << endl;
-  cout << "uid : " << uid << ", delay : " << stats.delay << ", width : " << stats.width <<
-    ", height : " << stats.height << ", receivedBitrate : " << stats.receivedBitrate <<
-    ", decoderOutputFrameRate :" << stats.decoderOutputFrameRate << ", streamType : " << stats.rxStreamType << endl;
-  cout << endl;
-  */
-}
-
-void AgoraSdk::onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats) {
-  (void) uid;
-  (void) stats;
-  /*
-  cout << __FUNCTION__ << endl;
-  cout << "uid : " << uid << ", quality :" << stats.quality << ", networkTransportDelay :" << stats.networkTransportDelay <<
-    ", jitterBufferDelay : " << stats.jitterBufferDelay << ", audioLossRate :" << stats.audioLossRate << endl;
-  cout << endl;
-  */
-}
-
-void AgoraSdk::onRecordingStats(const agora::linuxsdk::RecordingStats& stats) {
-  (void) stats;
-/*
-  cout << __FUNCTION__ << endl;
-  cout << "duration : " << stats.duration << ", rxBytes : " << stats.rxBytes <<
-    ", rxKBitRate : " << stats.rxKBitRate << ", rxAudioKBitRate : " << stats.rxAudioKBitRate <<
-    ", rxVideoKBitRate : " << stats.rxVideoKBitRate << ", lastmileDelay : " << stats.lastmileDelay <<
-    ", userCount : " << stats.userCount << ", cpuAppUsage : " << stats.cpuAppUsage <<
-    ", cpuTotalUsage : " << stats.cpuTotalUsage << endl;
-  cout << endl;
-  */
-}
-
-void AgoraSdk::onLocalUserRegistered(uid_t uid, const char* userAccount) {
-  cout << __FUNCTION__  << ", uid : " << uid << ", userAccount : " << userAccount << endl;
-}
-
-void AgoraSdk::onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info) {
-  cout << __FUNCTION__ << ", uid : " << uid << ", userAccount : " << info.userAccount << endl;
-  if (m_subscribeAudioUserAccount.find(info.userAccount) != m_subscribeAudioUserAccount.end()) {
-    m_subscribedAudioUids.insert(uid);
-  }
-
-  if (m_subscribeVideoUserAccount.find(info.userAccount) != m_subscribeVideoUserAccount.end()) {
-    m_subscribedVideoUids.insert(uid);
-  }
-
-  if (m_userAccount.length() > 0) {
-      setVideoMixLayout();
-  }
-}
-
-void AgoraSdk::onLeaveChannelImpl(agora::linuxsdk::LEAVE_PATH_CODE code) {
-  (void) code;
-    //cout << "leave channel with code:" << code << endl;
-}
-/*
-void timer_handler(void* arg){
-  (void) arg;
-  cout << "Timer triggered." << endl;
-}
-
-*/
-void AgoraSdk::onUserJoinedImpl(unsigned uid, agora::linuxsdk::UserJoinInfos &infos) {
-    if (find(m_peers.begin(), m_peers.end(), uid) != m_peers.end())
-      return;
-
-    cout << "User " << uid << " joined, RecordingDir:" << (infos.storageDir? infos.storageDir:"NULL") <<endl;
-    if(infos.storageDir)
-    {
-        m_logdir = m_storage_dir;
-    }
-
-    m_peers.push_back(uid);
-
-    //When the user joined, we can re-layout the canvas
-    if (m_userAccount.length() > 0) {
-      if (m_layoutMode != VERTICALPRESENTATION_LAYOUT || getUidByUserAccount(m_maxVertPreLayoutUserAccount.c_str()) != 0) {
-        setVideoMixLayout();
-      }
-    }
-    else {
-      setVideoMixLayout();
-    }
-    //agora::base::TimerManager::getIntervalTimer(2000, 2000, timer_handler, NULL);
-}
-
 int AgoraSdk::updateWatermarkConfigs(uint32_t wm_num, linuxsdk::WatermarkConfig* config) {
   if (m_engine) {
     return m_engine->updateWatermarkConfigs(wm_num, config);
@@ -468,98 +351,6 @@ uint32_t AgoraSdk::getUserAccountByUid(uint32_t uid, char* userAccountBuf, uint3
   return 0;
 }
 
-
-void AgoraSdk::onRemoteAudioStreamStateChangedImpl(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
-  (void) uid;
-  (void) state;
-  (void) reason;
-    //cout << "User " << uid << " audio state changed to " << state <<", reason : " << reason << endl;
-}
-
-void AgoraSdk::onRemoteVideoStreamStateChangedImpl(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
-  (void) uid;
-  (void) state;
-  (void) reason;
-    //cout << "User " << uid << " video state changed to " << state <<", reason : " << reason << endl;
-}
-
-void AgoraSdk::onUserOfflineImpl(unsigned uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
-    cout << "User " << uid << " offline, reason: " << reason << endl;
-    m_peers.erase(std::remove(m_peers.begin(), m_peers.end(), uid), m_peers.end());
-
-    //When the user is offline, we can re-layout the canvas
-    setVideoMixLayout();
-}
-
-void AgoraSdk::audioFrameReceivedImpl(unsigned int uid, const agora::linuxsdk::AudioFrame *pframe) const
-{
-  char uidbuf[65];
-  snprintf(uidbuf, sizeof(uidbuf),"%u", uid);
-  std::string info_name = m_storage_dir + std::string(uidbuf) /*+ timestamp_per_join_*/;
-
-  const uint8_t* data = NULL;
-  uint32_t size = 0;
-  unsigned int channels = 0;
-  std::string extension;
-  
-  if (pframe->type == agora::linuxsdk::AUDIO_FRAME_RAW_PCM) {
-    agora::linuxsdk::AudioPcmFrame *f = pframe->frame.pcm;
-    data = f->pcmBuf_;
-    size = f->pcmBufSize_;
-    channels = f->channels_;
-    extension = ".pcm";
-    cout << "User " << uid << ", received a raw PCM frame, channels: " << channels << std::endl;
-  } else if (pframe->type == agora::linuxsdk::AUDIO_FRAME_AAC) {
-    agora::linuxsdk::AudioAacFrame *f = pframe->frame.aac;
-    data = f->aacBuf_;
-    size = f->aacBufSize_;
-    channels = f->channels_;
-    extension = ".aac";
-    cout << "User " << uid << ", received an AAC frame, channels: " << channels << std::endl;
-  } else {
-    // Undefined frame type
-  }
-
-  auto info = m_audioFrameMap.find(uid);
-  if (info == m_audioFrameMap.end()) {
-    // Add a new uid audio frame info into map
-    AudioFrameInfo audio_info;
-    audio_info.m_channels = channels;
-    m_audioFrameMap[uid] = std::move(audio_info);
-  }
-  else {
-    if (m_audioFrameMap[uid].m_channels != channels) {
-      m_audioFrameMap[uid].m_index++;
-      m_audioFrameMap[uid].m_channels = channels;
-    }
-  }
-
-  if(m_audioFrameMap[uid].m_index != 1) {
-    char indexBuf[65];
-    snprintf(indexBuf, sizeof(indexBuf), "%u", m_audioFrameMap[uid].m_index);      
-    info_name += "_" + std::string(indexBuf);
-  }
-  std::string new_name = info_name + "_1" + extension;
-  info_name += extension;
-	uint32_t now = now_s();
-	if (m_mediaKeepTime && ((now - m_lastAudioKeepTime) > m_mediaKeepTime)) {
-		rename(info_name.c_str(), new_name.c_str());
-    m_lastAudioKeepTime = now;
-	}
-
-  FILE *fp = fopen(info_name.c_str(), "a+b");
-  if(fp == NULL) {
-      cout << "failed to open: " << info_name;
-      cout<< " ";
-      cout << "errno: " << errno;
-      cout<< endl;
-      return;
-  }
-
-  ::fwrite(data, 1, size, fp);
-  ::fclose(fp);
-}
-
 uint32_t AgoraSdk::now_s() const {
 	struct timeval now = { 0, 0 };
 	gettimeofday(&now, NULL);
@@ -568,128 +359,6 @@ uint32_t AgoraSdk::now_s() const {
 
 void AgoraSdk::setMediaKeepTime(uint32_t time_ms) {
 	m_mediaKeepTime = time_ms;
-}
-
-void AgoraSdk::videoFrameReceivedImpl(unsigned int uid, const agora::linuxsdk::VideoFrame *pframe) const {
-  char uidbuf[65];
-  snprintf(uidbuf, sizeof(uidbuf),"%u", uid);
-  const char * suffix=".vtmp";
-  if (pframe->type == agora::linuxsdk::VIDEO_FRAME_RAW_YUV) {
-    agora::linuxsdk::VideoYuvFrame *f = pframe->frame.yuv;
-    suffix=".yuv";
-
-    cout << "User " << uid << ", received a yuv frame, width: "
-        << f->width_ << ", height: " << f->height_ ;
-    cout<<",ystride:"<<f->ystride_<< ",ustride:"<<f->ustride_<<",vstride:"<<f->vstride_ << std::endl;
-    
-  } else if(pframe->type == agora::linuxsdk::VIDEO_FRAME_JPG) {
-    suffix=".jpg";
-    agora::linuxsdk::VideoJpgFrame *f = pframe->frame.jpg;
-
-    cout << "User " << uid << ", received an jpg frame, timestamp: "
-    << f->frame_ms_ << std::endl;
-
-    struct tm date;
-    time_t t = time(NULL);
-    localtime_r(&t, &date);
-    char timebuf[128];
-    sprintf(timebuf, "%04d%02d%02d%02d%02d%02d", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
-    std::string file_name = m_storage_dir + std::string(uidbuf) + "_" + std::string(timebuf) + suffix;
-    FILE *fp = fopen(file_name.c_str(), "w");
-    if(fp == NULL) {
-        cout << "failed to open: " << file_name;
-        cout<< " ";
-        cout << "errno: " << errno;
-        cout<< endl;
-        return;
-    }
-
-    ::fwrite(f->buf_, 1, f->bufSize_, fp);
-    ::fclose(fp);
-    return;
-  } else if (pframe->type == agora::linuxsdk::VIDEO_FRAME_H264) {
-    suffix=".h264";
-    agora::linuxsdk::VideoH264Frame *f = pframe->frame.h264;
-
-    cout << "User " << uid << ", received an h264 frame, timestamp: "
-        << f->frame_ms_ << ", frame no: " << f->frame_num_ 
-        << std::endl;
-  }  else if (pframe->type == agora::linuxsdk::VIDEO_FRAME_H265) {
-    suffix=".h265";
-    agora::linuxsdk::VideoH265Frame *f = pframe->frame.h265;
-
-    cout << "User " << uid << ", received an h265 frame, timestamp: "
-        << f->frame_ms_ << ", frame no: " << f->frame_num_ 
-        << std::endl;
-  } else {
-    cout << "User " << uid << ", received unknown frame type." << std::endl;
-    return;
-  }
-
-  std::string info_name = m_storage_dir + std::string(uidbuf) /*+ timestamp_per_join_ */+ std::string(suffix);
-	uint32_t now = now_s();
-	if (m_mediaKeepTime && ((now - m_lastVideoKeepTime) > m_mediaKeepTime)) {
-		std::string new_name = m_storage_dir + uidbuf + "_1" + suffix;
-		rename(info_name.c_str(), new_name.c_str());
-    m_lastVideoKeepTime = now;
-	}
-
-  FILE *fp = fopen(info_name.c_str(), "a+b");
-  if(fp == NULL) {
-        cout << "failed to open: " << info_name;
-        cout<< " ";
-        cout << "errno: " << errno;
-        cout<< endl;
-        return;
-  }
-
-
-  //store it as file
-  if (pframe->type == agora::linuxsdk::VIDEO_FRAME_RAW_YUV) {
-      agora::linuxsdk::VideoYuvFrame *f = pframe->frame.yuv;
-      ::fwrite(f->buf_, 1, f->bufSize_, fp);
-  }
-  else {
-      agora::linuxsdk::VideoH264Frame *f = pframe->frame.h264;
-      ::fwrite(f->buf_, 1, f->bufSize_, fp);
-  }
-  ::fclose(fp);
-
-}
-
-void AgoraSdk::onActiveSpeakerImpl(uid_t uid) {
-    cout << "User: " << uid << " is speaking" << endl;
-}
-
-void AgoraSdk::onAudioVolumeIndicationImpl(const linuxsdk::AudioVolumeInfo* speakers, unsigned int speakerNum) {
-    cout << "onAudioVolumeIndication" << endl;
-    for(uint32_t i = 0; i < speakerNum; i++) {
-        cout << "User: " << speakers[i].uid << ", volume is " << speakers[i].volume << endl;
-    }
-}
-
-void AgoraSdk::onFirstRemoteVideoDecodedImpl(uid_t uid, int width, int height, int elapsed) {
-    cout <<"onFirstRemoteVideoDecoded,"<<"User " << uid << " width:" << width << " height:"
-      << height << ", elapsed:"<< elapsed <<endl;
-}
-
-void AgoraSdk::onFirstRemoteAudioFrameImpl(uid_t uid, int elapsed) {
-    cout << "onFirstRemoteAudioFrame,"<<"User " << uid << ", elapsed:"<< elapsed <<endl;
-}
-
-void AgoraSdk::onReceivingStreamStatusChangedImpl(bool receivingAudio, bool receivingVideo) {
-    cout << "pre receiving video status is " << m_receivingVideo << " now receiving video status is " << receivingVideo << endl;
-    cout << "pre receiving audio status is " << m_receivingAudio << " now receiving audio status is " << receivingAudio << endl;
-    m_receivingAudio = receivingAudio;
-    m_receivingVideo = receivingVideo;
-}
-
-void AgoraSdk::onConnectionLostImpl() {
-    cout << "connection is lost" << endl;
-}
-
-void AgoraSdk::onConnectionInterruptedImpl() {
-    cout << "connection is interrupted" << endl;
 }
 
 void AgoraSdk::adjustDefaultVideoLayout(agora::linuxsdk::VideoMixingLayout::Region * regionList,

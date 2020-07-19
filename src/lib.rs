@@ -374,33 +374,93 @@ impl Layout {
     }
 }
 
-cpp!{{
-    class AgoraSdk : public agora::AgoraSdk {
-    protected:
-        virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) override {
-            rust!(OnErrorImpl [this : AgoraSdk as "AgoraSdk*", error : u32 as "int", stat_code : u32 as "int"] {
-                this.on_error(error, stat_code);
-            });
-        }
+// cpp!{{
+//     class AgoraSdk : public agora::AgoraSdk {
+//     protected:
+//         virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) override {
+//             rust!(OnErrorImpl [this : AgoraSdk as "AgoraSdk*", error : u32 as "int", stat_code : u32 as "int"] {
+//                 this.on_error(error, stat_code);
+//             });
+//         }
 
-        virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) override {
-            rust!(OnUserImpl [this : AgoraSdk as "AgoraSdk*", uid : u32 as "int"] {
-                this.on_user_joined(uid);
-            });
-        }
-    };
-}}
+//         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) override {
+//             rust!(OnUserImpl [this : AgoraSdk as "AgoraSdk*", uid : u32 as "int"] {
+//                 this.on_user_joined(uid);
+//             });
+//         }
+//     };
+// }}
+
+// cpp!{{
+//     class AgoraSdkEvents :  virtual public agora::recording::IRecordingEngineEventHandler {
+//         protected:
+//         virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) {
+//             //sdk->stoppedOnError();
+//         }
+//         virtual void onWarning(int warn) {
+//         }
+//         virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
+//         }
+//         virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
+//         }
+    
+//         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
+//         }
+    
+//         virtual void onRemoteVideoStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
+//         }
+    
+//         virtual void onRemoteAudioStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
+//         }
+    
+//         virtual void onUserOffline(agora::linuxsdk::uid_t uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
+//         }
+    
+//         virtual void audioFrameReceived(unsigned int uid, const agora::linuxsdk::AudioFrame *frame) const {
+//         }
+//         virtual void videoFrameReceived(unsigned int uid, const agora::linuxsdk::VideoFrame *frame) const {
+//         }
+//         virtual void onActiveSpeaker(uid_t uid) {
+//         }
+//         virtual void onAudioVolumeIndication(const agora::linuxsdk::AudioVolumeInfo* speakers, unsigned int speakerNum) {
+//         }
+    
+//         virtual void onFirstRemoteVideoDecoded(uid_t uid, int width, int height, int elapsed) {
+//         }
+    
+//         virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {}
+    
+//         virtual void onReceivingStreamStatusChanged(bool receivingAudio, bool receivingVideo) {}
+    
+//         virtual void onConnectionLost() {}
+    
+//         virtual void onConnectionInterrupted() {}
+    
+//         virtual void onRejoinChannelSuccess(const char* channelId, uid_t uid) {}
+    
+//         virtual void onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason){}
+    
+//         virtual void onRecordingStats(const agora::linuxsdk::RecordingStats& stats){}
+    
+//         virtual void onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats){}
+    
+//         virtual void onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats){}
+            
+//         virtual void onLocalUserRegistered(uid_t uid, const char* userAccount){}
+    
+//         virtual void onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info){}
+//     }    
+// }}
 
 pub struct AgoraSdk {
     sdk: *mut u32,
 }
 
-
 impl AgoraSdk {
     pub fn new() -> Self {
         let sdk = unsafe {
-            cpp!([] -> *mut u32  as "AgoraSdk*" {
-                return new AgoraSdk();
+            cpp!([] -> *mut u32  as "agora::AgoraSdk*" {
+                return new agora::AgoraSdk();
             })
         };
 
@@ -412,7 +472,7 @@ impl AgoraSdk {
     pub fn set_keep_last_frame(&self, keep : bool) {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "AgoraSdk*", keep as "bool"] {
+            cpp!([me as "agora::AgoraSdk*", keep as "bool"] {
                     return me->setKeepLastFrame(keep);
                 }
             )
@@ -427,7 +487,7 @@ impl AgoraSdk {
         let channel_key = CString::new(channel_key).unwrap().into_raw();
         
         unsafe {
-            cpp!([  me as "AgoraSdk*", 
+            cpp!([  me as "agora::AgoraSdk*", 
                     app_id as "const char *",
                     channel_key as "const char *",
                     name as "const char *",
@@ -444,7 +504,7 @@ impl AgoraSdk {
     pub fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool) {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "AgoraSdk*",
+            cpp!([me as "agora::AgoraSdk*",
                 width as "int",
                 height as "int", 
                 is_video_mix as "bool"] {
@@ -458,7 +518,7 @@ impl AgoraSdk {
     pub fn leave_channel(&self) -> bool {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "AgoraSdk*"] -> bool as "bool" {
+            cpp!([me as "agora::AgoraSdk*"] -> bool as "bool" {
                     return me->leaveChannel();
                 }
             )
@@ -468,7 +528,7 @@ impl AgoraSdk {
     pub fn set_video_mixing_layout(&self, layout: &Layout) -> u32 {
         let me = self.sdk;
         unsafe {
-            cpp!([  me as "AgoraSdk*", 
+            cpp!([  me as "agora::AgoraSdk*", 
                     layout as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
                 
                 return me->setVideoMixingLayout(*layout);
@@ -479,24 +539,10 @@ impl AgoraSdk {
     pub fn release(&self) -> bool {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "AgoraSdk*"] -> bool as "bool" {
+            cpp!([me as "agora::AgoraSdk*"] -> bool as "bool" {
                 return me->release();
             })
         }
-    }
-         
-    fn on_error(&self, error: u32, stat_code: u32) {
-        println!("on_error - {} {}", error, stat_code)
-    }
-
-    fn on_user_joined(&self, uid: u32) {
-        let layout = Layout::new();
-        layout.set_canvas_width(640);
-        layout.set_canvas_height(480);
-        layout.set_background_rgb("#00ff00");
-        self.set_video_mixing_layout(&layout);
-        
-        println!("on_user_joined - {}", uid)
     }
 }
 
@@ -504,7 +550,7 @@ impl Drop for AgoraSdk {
     fn drop(&mut self) {
         let me = self.sdk;
         unsafe {
-            cpp!([me as "AgoraSdk*"] {
+            cpp!([me as "agora::AgoraSdk*"] {
                 delete me;
             })
         };
