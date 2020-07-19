@@ -654,17 +654,13 @@ mod tests {
     #[test]
     fn recorder_create() {
         
-        let mut on_error = |error, stat_code| {
-            println!("on_error -> {} {}", error, stat_code);
-        };
-        
-        let mut on_user_joined = |uid| {
-            println!("on_user_joined -> {}", uid);            
-        };
-
         let events = AgoraSdkEvents::new();
-        events.set_on_error(on_error);
-        events.set_on_user_joined(on_user_joined);
+        events.set_on_error(|error, stat_code| {
+            println!("on_error -> {} {}", error, stat_code);
+        });
+        events.set_on_user_joined(|uid| {
+            println!("on_user_joined -> {}", uid);            
+        });
         
         let sdk = AgoraSdk::new();
         sdk.set_handler(&events);
