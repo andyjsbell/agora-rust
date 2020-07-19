@@ -470,6 +470,7 @@ cpp!{{
 
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
+    initialised: bool,
     on_error: Option<Box<dyn FnMut(u32, u32)>>,
     on_user_joined: Option<Box<dyn FnMut(u32)>>,    
 }
@@ -495,20 +496,29 @@ impl AgoraSdkEvents {
 
         AgoraSdkEvents {
             rawptr,
+            initialised: false,
             on_error: None,
             on_user_joined: None,
         }
     }
 
     pub fn set_on_error(&mut self, on_error: impl FnMut(u32, u32) + 'static) {
-        self.on_error = Some(Box::new(on_error))
+        self.on_error = Some(Box::new(on_error));
+        self.connect()
     }
 
     pub fn set_on_user_joined(&mut self, on_user_joined: impl FnMut(u32) + 'static) {
-        self.on_user_joined = Some(Box::new(on_user_joined))
+        self.on_user_joined = Some(Box::new(on_user_joined));
+        self.connect()
     }
 
-    pub fn connect(&self) {
+    pub fn connect(&mut self) {
+        if self.initialised {
+            return;
+        }
+        
+        self.initialised = true;
+        
         let inst_ptr: &dyn CallbackTrait = self as &dyn CallbackTrait;    
         let rawptr = self.rawptr;
         unsafe {
@@ -532,8 +542,6 @@ impl AgoraSdk {
                 return new agora::AgoraSdk(handler);
             })
         };
-
-        events.connect();
 
         AgoraSdk {
             sdk,
