@@ -529,6 +529,7 @@ impl AgoraSdkEvents {
     }
 }
 
+#[derive(Debug)]
 pub struct AgoraSdk {
     sdk: *mut u32,
 }
@@ -645,10 +646,20 @@ impl Drop for AgoraSdk {
     }    
 }
 
+impl Clone for AgoraSdk {
+    fn clone(&self) -> Self {
+        
+        AgoraSdk {
+            sdk: self.sdk,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::{thread, time};
+    use std::sync::Arc;
 
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
@@ -674,18 +685,23 @@ mod tests {
         config.set_audio_indication_interval(0);
         
         let channel = "demo";
+        
+        {
+            let sdk = sdk.clone();
+            let on_user = move |uid| {
+                println!("on_user_joined -> {}", uid);   
+                let layout = Layout::new();
+                layout.set_region_count(1);
+                layout.set_region(0, 0, 0, 1, 1, uid);
+                layout.set_background_rgb("#00ff00");
+
+                sdk.set_video_mixing_layout(&layout);
+            };
+            events.set_on_user_joined(on_user);
+        }
+
         sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
-        events.set_on_user_joined(move |uid| {
-            println!("on_user_joined -> {}", uid);   
-            let layout = Layout::new();
-            layout.set_region_count(1);
-            layout.set_region(0, 0, 0, 1, 1, uid);
-            layout.set_background_rgb("#00ff00");
-
-            sdk.set_video_mixing_layout(&layout);
-        });
-
         thread::sleep(time::Duration::from_millis(5000));
     }
 
