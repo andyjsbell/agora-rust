@@ -535,17 +535,26 @@ pub struct AgoraSdk {
 }
 
 impl AgoraSdk {
-    pub fn new(events: &AgoraSdkEvents) -> Self {
+    pub fn new() -> Self {
         let sdk = unsafe {
-            let handler = events.rawptr;
-            cpp!([handler as "agora::recording::IRecordingEngineEventHandler*"] -> *mut u32  as "agora::AgoraSdk*" {
-                return new agora::AgoraSdk(handler);
+            cpp!([] -> *mut u32  as "agora::AgoraSdk*" {
+                return new agora::AgoraSdk();
             })
         };
 
         AgoraSdk {
             sdk,
         }
+    }
+
+    pub fn set_handler(&mut self, events: &AgoraSdkEvents) {
+        unsafe {
+            let handler = events.rawptr;
+            let me = self.sdk;
+            cpp!([me as "agora::AgoraSdk*", handler as "agora::recording::IRecordingEngineEventHandler*"] {
+                me->setHandler(handler);
+            })
+        };
     }
 
     pub fn set_keep_last_frame(&self, keep : bool) {
@@ -657,7 +666,9 @@ mod tests {
         events.set_on_error(on_error);
         events.set_on_user_joined(on_user_joined);
         
-        let sdk = AgoraSdk::new(&events);
+        let sdk = AgoraSdk::new();
+        sdk.set_handler(&events);
+
         let config = Config::new();
            
         config.set_app_lite_dir("/home/andy/devel");
