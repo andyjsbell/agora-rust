@@ -1,3 +1,4 @@
+#![recursion_limit = "512"]
 use cpp::cpp;
 use cpp::cpp_class;
 use std::ffi::{CString, CStr};
@@ -391,78 +392,132 @@ impl Layout {
 //     };
 // }}
 
-// cpp!{{
-//     class AgoraSdkEvents :  virtual public agora::recording::IRecordingEngineEventHandler {
-//         protected:
-//         virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) {
-//             //sdk->stoppedOnError();
-//         }
-//         virtual void onWarning(int warn) {
-//         }
-//         virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
-//         }
-//         virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
-//         }
+pub trait CallbackTrait {
+    fn on_error(&mut self, error: u32, stat_code: u32);
+}
+
+cpp!{{ 
+    struct CallbackPtr { void *a,*b; };
+    class AgoraSdkEvents :  virtual public agora::recording::IRecordingEngineEventHandler {
+        public:
+        CallbackPtr callback;
+        protected:
+        virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) {
+            //sdk->stoppedOnError();
+            rust!(OnErrorImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", error: u32 as "int", stat_code : u32 as "int"] {
+                callback.on_error(error, stat_code)
+            });
+        }
+        
+        virtual void onWarning(int /*warn*/) {
+        }
+        virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
+        }
+        virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
+        }
     
-//         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
-//         }
+        virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
+        }
     
-//         virtual void onRemoteVideoStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
-//         }
+        virtual void onRemoteVideoStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
+        }
     
-//         virtual void onRemoteAudioStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
-//         }
+        virtual void onRemoteAudioStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
+        }
     
-//         virtual void onUserOffline(agora::linuxsdk::uid_t uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
-//         }
+        virtual void onUserOffline(agora::linuxsdk::uid_t uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
+        }
     
-//         virtual void audioFrameReceived(unsigned int uid, const agora::linuxsdk::AudioFrame *frame) const {
-//         }
-//         virtual void videoFrameReceived(unsigned int uid, const agora::linuxsdk::VideoFrame *frame) const {
-//         }
-//         virtual void onActiveSpeaker(uid_t uid) {
-//         }
-//         virtual void onAudioVolumeIndication(const agora::linuxsdk::AudioVolumeInfo* speakers, unsigned int speakerNum) {
-//         }
+        virtual void audioFrameReceived(unsigned int uid, const agora::linuxsdk::AudioFrame *frame) const {
+        }
+        virtual void videoFrameReceived(unsigned int uid, const agora::linuxsdk::VideoFrame *frame) const {
+        }
+        virtual void onActiveSpeaker(uid_t uid) {
+        }
+        virtual void onAudioVolumeIndication(const agora::linuxsdk::AudioVolumeInfo* speakers, unsigned int speakerNum) {
+        }
     
-//         virtual void onFirstRemoteVideoDecoded(uid_t uid, int width, int height, int elapsed) {
-//         }
+        virtual void onFirstRemoteVideoDecoded(uid_t uid, int width, int height, int elapsed) {
+        }
     
-//         virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {}
+        virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {}
     
-//         virtual void onReceivingStreamStatusChanged(bool receivingAudio, bool receivingVideo) {}
+        virtual void onReceivingStreamStatusChanged(bool receivingAudio, bool receivingVideo) {}
     
-//         virtual void onConnectionLost() {}
+        virtual void onConnectionLost() {}
     
-//         virtual void onConnectionInterrupted() {}
+        virtual void onConnectionInterrupted() {}
     
-//         virtual void onRejoinChannelSuccess(const char* channelId, uid_t uid) {}
+        virtual void onRejoinChannelSuccess(const char* channelId, uid_t uid) {}
     
-//         virtual void onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason){}
+        virtual void onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason){}
     
-//         virtual void onRecordingStats(const agora::linuxsdk::RecordingStats& stats){}
+        virtual void onRecordingStats(const agora::linuxsdk::RecordingStats& stats){}
     
-//         virtual void onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats){}
+        virtual void onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats){}
     
-//         virtual void onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats){}
+        virtual void onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats){}
             
-//         virtual void onLocalUserRegistered(uid_t uid, const char* userAccount){}
+        virtual void onLocalUserRegistered(uid_t uid, const char* userAccount){}
     
-//         virtual void onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info){}
-//     }    
-// }}
+        virtual void onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info){}
+    };    
+}}
+
+pub struct AgoraSdkEvents {
+    pub rawptr: *mut u32,
+    on_error: Box<dyn FnMut(u32, u32)>,
+}
+
+impl CallbackTrait for AgoraSdkEvents {
+    fn on_error(&mut self, error: u32, stat_code: u32) {
+        (self.on_error)(error, stat_code);
+    }
+}
+
+impl AgoraSdkEvents {
+    pub fn new(on_error: impl FnMut(u32, u32) + 'static) -> Self {
+        let rawptr = unsafe {
+            cpp!([] -> *mut u32  as "agora::recording::IRecordingEngineEventHandler*" {
+                return new AgoraSdkEvents();
+            })
+        };
+
+        AgoraSdkEvents {
+            rawptr,
+            on_error: Box::new(on_error)
+        }
+    }
+
+    pub fn connect(&self) {
+        let inst_ptr: &dyn CallbackTrait = self as &dyn CallbackTrait;    
+        let rawptr = self.rawptr;
+        unsafe {
+            cpp!([  rawptr as "AgoraSdkEvents*",
+                    inst_ptr as "CallbackPtr"] {
+                rawptr->callback = inst_ptr;
+            })
+        } 
+    }
+    // pub fn set_callback(&mut self, callback: impl FnMut() + 'static) {
+    //     self.callback = Some(Box::new(callback));
+    // }
+}
 
 pub struct AgoraSdk {
     sdk: *mut u32,
 }
 
 impl AgoraSdk {
-    pub fn new() -> Self {
+    pub fn new(events: &AgoraSdkEvents) -> Self {
         let sdk = unsafe {
-            cpp!([] -> *mut u32  as "agora::AgoraSdk*" {
-                return new agora::AgoraSdk();
+            let handler = events.rawptr;
+            cpp!([handler as "agora::recording::IRecordingEngineEventHandler*"] -> *mut u32  as "agora::AgoraSdk*" {
+                return new agora::AgoraSdk(handler);
             })
         };
+
+        events.connect();
 
         AgoraSdk {
             sdk,
@@ -565,7 +620,13 @@ mod tests {
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
     fn recorder_create() {
-        let sdk = AgoraSdk::new();
+        
+        let mut on_error = |u32, u32| {
+            sdk.leave_channel();
+        };
+        
+        let events = AgoraSdkEvents::new(on_error);
+        let sdk = AgoraSdk::new(&events);
         let config = Config::new();
            
         config.set_app_lite_dir("/home/andy/devel");
@@ -578,14 +639,6 @@ mod tests {
         config.set_audio_indication_interval(0);
         
         sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", "a9703b15-62c7-4854-adf3-7fde735e04a3", 0, &config);
-        
-        let mut cb = || {
-            sdk.leave_channel();
-        };
-
-        sdk.set_callback(cb);
-        sdk.release();
-        cb();
         
         thread::sleep(time::Duration::from_millis(20000));
     }
