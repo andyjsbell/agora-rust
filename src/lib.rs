@@ -11,7 +11,7 @@ cpp!{{
 }}
 
 #[derive(PartialEq, PartialOrd, Debug)]
-enum TriggerMode {
+pub enum TriggerMode {
     Automatic = 0,
     Manual = 1,
     Unknown = 2
@@ -38,7 +38,7 @@ impl From<u32> for TriggerMode {
 }
 
 #[derive(PartialEq, PartialOrd, Debug)]
-enum MixedAvCodecType {
+pub enum MixedAvCodecType {
     MixedAvDefault = 0,  
     MixedAvCodecV1 = 1,
     MixedAvCodecV2 = 2,
@@ -68,7 +68,7 @@ impl From<u32> for MixedAvCodecType {
 }
 
 #[derive(PartialEq, PartialOrd, Debug)]
-enum ChannelProfile
+pub enum ChannelProfile
 {
     Communication = 0,
     LiveBroadcast = 1,
@@ -97,11 +97,11 @@ impl From<u32> for ChannelProfile {
 
 cpp_class!(pub unsafe struct Config as "agora::recording::RecordingConfig");
 impl Config {
-    fn new() -> Self {
+    pub fn new() -> Self {
         unsafe { cpp!([] -> Config as "agora::recording::RecordingConfig" {return agora::recording::RecordingConfig();}) }
     }
 
-    fn set_app_lite_dir(&self, dir: &str) {
+    pub fn set_app_lite_dir(&self, dir: &str) {
         let dir = CString::new(dir).unwrap().into_raw();
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*", dir as "const char *"] {
@@ -110,7 +110,7 @@ impl Config {
         }
     }
 
-    fn is_mixing_enabled(&self) -> bool {
+    pub fn is_mixing_enabled(&self) -> bool {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> bool as "bool" {
                 return self->isMixingEnabled;
@@ -118,7 +118,7 @@ impl Config {
         }    
     }
 
-    fn set_mixing_enabled(&self, enabled: bool) {
+    pub fn set_mixing_enabled(&self, enabled: bool) {
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
                     enabled as "bool"] {
@@ -127,7 +127,7 @@ impl Config {
         }    
     }
 
-    fn set_recording_path(&self, path: &str) {
+    pub fn set_recording_path(&self, path: &str) {
         let path = CString::new(path).unwrap().into_raw();
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
@@ -137,7 +137,7 @@ impl Config {
         }
     }
 
-    fn recording_path(&self) -> Result<&str, std::str::Utf8Error> {
+    pub fn recording_path(&self) -> Result<&str, std::str::Utf8Error> {
         let p = unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> *const c_char as "const char *" {
                 return self->appliteDir;
@@ -147,7 +147,7 @@ impl Config {
         c.to_str()
     }
 
-    fn set_config_path(&self, path: &str) {
+    pub fn set_config_path(&self, path: &str) {
         let path = CString::new(path).unwrap().into_raw();
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
@@ -157,7 +157,7 @@ impl Config {
         }
     }
 
-    fn config_path(&self) -> Result<&str, std::str::Utf8Error> {
+    pub fn config_path(&self) -> Result<&str, std::str::Utf8Error> {
         let p = unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> *const c_char as "const char *" {
                 return self->cfgFilePath;
@@ -167,7 +167,7 @@ impl Config {
         c.to_str()
     }
 
-    fn set_mixed_video_audio(&self, mixed_type: MixedAvCodecType) {
+    pub fn set_mixed_video_audio(&self, mixed_type: MixedAvCodecType) {
         let mixed_type = mixed_type.value();
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
@@ -177,7 +177,7 @@ impl Config {
         }
     }
 
-    fn mixed_video_audio(&self) -> MixedAvCodecType {
+    pub fn mixed_video_audio(&self) -> MixedAvCodecType {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "agora::linuxsdk::MIXED_AV_CODEC_TYPE" {
                 return self->mixedVideoAudio;
@@ -185,7 +185,7 @@ impl Config {
         }.into()
     }
                 
-    fn set_idle_limit_sec(&self, limit: u32) {
+    pub fn set_idle_limit_sec(&self, limit: u32) {
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
                     limit as "int"] {
@@ -194,7 +194,7 @@ impl Config {
         }   
     }
 
-    fn idle_limit_sec(&self) -> u32{
+    pub fn idle_limit_sec(&self) -> u32{
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "int" {
                 return self->idleLimitSec;
@@ -202,7 +202,7 @@ impl Config {
         }
     }
                 
-    fn set_channel_profile(&self, profile: ChannelProfile) {
+    pub fn set_channel_profile(&self, profile: ChannelProfile) {
         let profile = profile.value();
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
@@ -212,7 +212,7 @@ impl Config {
         }
     }
 
-    fn channel_profile(&self) -> ChannelProfile {
+    pub fn channel_profile(&self) -> ChannelProfile {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "agora::linuxsdk::CHANNEL_PROFILE_TYPE" {
                 return self->channelProfile;
@@ -220,7 +220,7 @@ impl Config {
         }.into()
     }
 
-    fn set_trigger_mode(&self, trigger: TriggerMode) {
+    pub fn set_trigger_mode(&self, trigger: TriggerMode) {
         let trigger = trigger.value();
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
@@ -230,7 +230,7 @@ impl Config {
         }
     }
 
-    fn trigger_mode(&self) -> TriggerMode {
+    pub fn trigger_mode(&self) -> TriggerMode {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "agora::linuxsdk::TRIGGER_MODE_TYPE" {
                 return self->triggerMode;
@@ -238,7 +238,7 @@ impl Config {
         }.into()
     }
 
-    fn set_mix_resolution(&self, width: u32, height: u32, fps: u32, kbps: u32) {
+    pub fn set_mix_resolution(&self, width: u32, height: u32, fps: u32, kbps: u32) {
         let mix_resolution = format!("{},{},{},{}", width, height, fps, kbps);
         
         let mix_resolution = CString::new(mix_resolution).unwrap().into_raw();
@@ -250,7 +250,7 @@ impl Config {
         }
     }
 
-    fn mix_resolution(&self) -> (u32, u32, u32, u32) {
+    pub fn mix_resolution(&self) -> (u32, u32, u32, u32) {
         let p = unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> *const c_char as "const char *" {
                 return self->mixResolution;
@@ -263,7 +263,7 @@ impl Config {
         (vec[0], vec[1], vec[2], vec[3])
     }
 
-    fn set_audio_indication_interval(&self, interval: u32) {
+    pub fn set_audio_indication_interval(&self, interval: u32) {
         unsafe {
             cpp!([  self as "agora::recording::RecordingConfig*",
                     interval as "int"] {
@@ -272,23 +272,22 @@ impl Config {
         }   
     }
 
-    fn audio_indication_interval(&self) -> u32 {
+    pub fn audio_indication_interval(&self) -> u32 {
         unsafe {
             cpp!([self as "agora::recording::RecordingConfig*"] -> u32 as "int" {
                 return self->audioIndicationInterval;
             })
         }
     }
-
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
 impl Layout {
-    fn new() -> Self {
+    pub fn new() -> Self {
         unsafe { cpp!([] -> Layout as "agora::linuxsdk::VideoMixingLayout" {return agora::linuxsdk::VideoMixingLayout();}) }
     }
 
-    fn set_canvas_width(&self, width: u32) {
+    pub fn set_canvas_width(&self, width: u32) {
         unsafe {
             cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
                     width as "int"] {
@@ -297,7 +296,7 @@ impl Layout {
         }   
     }
 
-    fn canvas_width(&self) -> u32 {
+    pub fn canvas_width(&self) -> u32 {
         unsafe {
             cpp!([self as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
                 return self->canvasWidth;
@@ -305,7 +304,7 @@ impl Layout {
         }
     }
     
-    fn set_canvas_height(&self, height: u32) {
+    pub fn set_canvas_height(&self, height: u32) {
         unsafe {
             cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
                     height as "int"] {
@@ -314,7 +313,7 @@ impl Layout {
         }   
     }
 
-    fn canvas_height(&self) -> u32 {
+    pub fn canvas_height(&self) -> u32 {
         unsafe {
             cpp!([self as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
                 return self->canvasHeight;
@@ -322,7 +321,7 @@ impl Layout {
         }
     }
 
-    fn set_background_rgb(&self, rgb: &str) {
+    pub fn set_background_rgb(&self, rgb: &str) {
         let rgb = CString::new(rgb).unwrap().into_raw();
         unsafe {
             cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
@@ -332,7 +331,7 @@ impl Layout {
         }
     }
 
-    fn background_rgb(&self) -> Result<&str, std::str::Utf8Error> {
+    pub fn background_rgb(&self) -> Result<&str, std::str::Utf8Error> {
         let p = unsafe {
             cpp!([self as "agora::linuxsdk::VideoMixingLayout*"] -> *const c_char as "const char *" {
                 return self->backgroundColor;
@@ -342,7 +341,7 @@ impl Layout {
         c.to_str()
     }
 
-    fn set_region_count(&self, count: u32) {
+    pub fn set_region_count(&self, count: u32) {
         unsafe {
             cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
                     count as "int"] {
@@ -351,7 +350,7 @@ impl Layout {
         }  
     }
 
-    fn set_region(&self, index: u32, x: u32, y: u32, width: u32, height: u32, uid: u32) {
+    pub fn set_region(&self, index: u32, x: u32, y: u32, width: u32, height: u32, uid: u32) {
         unsafe {
             cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
                     index as "int",
@@ -661,20 +660,17 @@ mod tests {
         
         let channel = "demo";
         
-        {
-            let sdk = sdk.clone();
-            let on_user = move |uid| {
-                println!("on_user_joined -> {}", uid);   
-                let layout = Layout::new();
-                layout.set_region_count(1);
-                layout.set_region(0, 0, 0, 1, 1, uid);
-                layout.set_background_rgb("#00ff00");
+        let on_user = |uid| {
+            println!("on_user_joined -> {}", uid);   
+            let layout = Layout::new();
+            layout.set_region_count(1);
+            layout.set_region(0, 0, 0, 1, 1, uid);
+            layout.set_background_rgb("#00ff00");
 
-                sdk.set_video_mixing_layout(&layout);
-            };
-            events.set_on_user_joined(on_user);
-        }
-
+            sdk.set_video_mixing_layout(&layout);
+        };
+        events.set_on_user_joined(on_user);
+        
         sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
         thread::sleep(time::Duration::from_millis(5000));
