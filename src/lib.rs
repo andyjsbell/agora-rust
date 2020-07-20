@@ -374,23 +374,6 @@ impl Layout {
     }
 }
 
-// cpp!{{
-//     class AgoraSdk : public agora::AgoraSdk {
-//     protected:
-//         virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) override {
-//             rust!(OnErrorImpl [this : AgoraSdk as "AgoraSdk*", error : u32 as "int", stat_code : u32 as "int"] {
-//                 this.on_error(error, stat_code);
-//             });
-//         }
-
-//         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) override {
-//             rust!(OnUserImpl [this : AgoraSdk as "AgoraSdk*", uid : u32 as "int"] {
-//                 this.on_user_joined(uid);
-//             });
-//         }
-//     };
-// }}
-
 pub trait CallbackTrait {
     fn on_error(&mut self, error: u32, stat_code: u32);
     fn on_user_joined(&mut self, uid: u32);
