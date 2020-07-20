@@ -512,10 +512,11 @@ impl AgoraSdkEvents {
     }
 }
 
-#[derive(Debug)]
 pub struct AgoraSdk {
     sdk: *mut u32,
 }
+
+unsafe impl Send for AgoraSdk {}
 
 impl AgoraSdk {
     pub fn new() -> Self {
@@ -627,15 +628,6 @@ impl Drop for AgoraSdk {
             })
         };
     }    
-}
-
-impl Clone for AgoraSdk {
-    fn clone(&self) -> Self {
-        
-        AgoraSdk {
-            sdk: self.sdk,
-        }
-    }
 }
 
 #[cfg(test)]
