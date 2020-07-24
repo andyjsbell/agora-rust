@@ -376,6 +376,7 @@ impl Layout {
 pub trait CallbackTrait {
     fn on_error(&mut self, error: u32, stat_code: u32);
     fn on_user_joined(&mut self, uid: u32);
+    fn on_user_left(&mut self, uid: u32);    
 }
 
 cpp!{{ 
@@ -411,6 +412,9 @@ cpp!{{
         }
     
         virtual void onUserOffline(agora::linuxsdk::uid_t uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
+            rust!(OnUserOfflineImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", uid: u32 as "int"] {
+                callback.on_user_left(uid)
+            });
         }
     
         virtual void audioFrameReceived(unsigned int uid, const agora::linuxsdk::AudioFrame *frame) const {
@@ -453,7 +457,8 @@ pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
     initialised: bool,
     on_error: Option<Box<dyn FnMut(u32, u32)>>,
-    on_user_joined: Option<Box<dyn FnMut(u32)>>,    
+    on_user_joined: Option<Box<dyn FnMut(u32)>>,   
+    on_user_left: Option<Box<dyn FnMut(u32)>>, 
 }
 
 impl CallbackTrait for AgoraSdkEvents {
@@ -464,6 +469,10 @@ impl CallbackTrait for AgoraSdkEvents {
 
     fn on_user_joined(&mut self, uid: u32) {
         self.on_user_joined.as_mut().unwrap()(uid);
+    }
+
+    fn on_user_left(&mut self, uid: u32) {
+        self.on_user_left.as_mut().unwrap()(uid);
     }
 }
 
@@ -480,6 +489,7 @@ impl AgoraSdkEvents {
             initialised: false,
             on_error: None,
             on_user_joined: None,
+            on_user_left: None,
         }
     }
 
@@ -490,6 +500,11 @@ impl AgoraSdkEvents {
 
     pub fn set_on_user_joined(&mut self, on_user_joined: impl FnMut(u32) + 'static) {
         self.on_user_joined = Some(Box::new(on_user_joined));
+        self.connect()
+    }
+
+    pub fn set_on_user_left(&mut self, on_user_left: impl FnMut(u32) + 'static) {
+        self.on_user_left = Some(Box::new(on_user_left));
         self.connect()
     }
 
