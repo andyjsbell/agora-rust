@@ -281,6 +281,30 @@ impl Config {
     }
 }
 
+cpp_class!(pub unsafe struct Region as "agora::linuxsdk::VideoMixingLayout::Region");
+impl Region {
+    pub fn new(uid: u32, x: f64, y: f64, width: f64, height: f64, alpha:f64, render_mode: u32) -> Self {
+        unsafe { cpp!([ uid as "int", 
+                        x as "double", 
+                        y as "double", 
+                        width as "double", 
+                        height as "double",
+                        alpha as "double", 
+                        render_mode as "int"] -> Region as "agora::linuxsdk::VideoMixingLayout::Region" {
+            
+            agora::linuxsdk::VideoMixingLayout::Region region;
+            region.uid = uid;
+            region.x = x;
+            region.y = y;
+            region.width = width;
+            region.height = height;
+            region.alpha = alpha;
+            region.renderMode = render_mode;
+            return region;
+        })}
+    }
+}
+
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
 impl Layout {
     pub fn new() -> Self {
@@ -349,6 +373,26 @@ impl Layout {
             })
         }  
     }
+
+    // pub fn set_regions(&self, regions: Vec<Region>) {
+
+    //     let count = regions.len();
+    //     unsafe {
+    //         cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+    //                 count as "int"] {
+    //             self->regionCount = count;
+    //             if (self->regions != nullptr)
+    //                 delete self->regions;
+
+    //             agora::linuxsdk::VideoMixingLayout::Region * regionList = new agora::linuxsdk::VideoMixingLayout::Region[count];
+
+    //         })
+    //     }  
+
+    //     for region in &regions {
+            
+    //     }
+    // }
 
     pub fn set_region(&self, index: u32, x: u32, y: u32, width: u32, height: u32, uid: u32) {
         unsafe {
