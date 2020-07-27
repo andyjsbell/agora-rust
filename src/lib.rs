@@ -868,7 +868,7 @@ mod tests {
     }
 
     #[test]
-    fn config_new_region() {
+    fn region_new() {
         let uid = 1;
         let x = 1.0;
         let y = 1.0;
@@ -886,5 +886,4 @@ mod tests {
         assert!(region.alpha() == alpha);
         assert!(region.render_mode() == render_mode);
     }
-
 }
