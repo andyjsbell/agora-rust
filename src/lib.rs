@@ -365,15 +365,6 @@ impl Layout {
         c.to_str()
     }
 
-    pub fn set_region_count(&self, count: u32) {
-        unsafe {
-            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
-                    count as "int"] {
-                self->regionCount = count;
-            })
-        }  
-    }
-
     pub fn set_regions(&self, regions: Vec<Region>) {
 
         cpp! {{
@@ -413,28 +404,6 @@ impl Layout {
 
             index = index + 1;
         }
-    }
-
-    pub fn set_region(&self, index: u32, x: u32, y: u32, width: u32, height: u32, uid: u32) {
-        unsafe {
-            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
-                    index as "int",
-                    x as "int",
-                    y as "int",
-                    width as "int",
-                    height as "int",
-                    uid as "int"] {
-                
-                agora::linuxsdk::VideoMixingLayout::Region * regionList = new agora::linuxsdk::VideoMixingLayout::Region[1];
-                regionList[0].uid = uid;
-                regionList[0].x = x;
-                regionList[0].width = width;
-                regionList[0].height = height;
-                regionList[0].alpha = 1;
-                regionList[0].renderMode = 0;
-                self->regions = regionList;
-            })
-        }  
     }
 }
 
