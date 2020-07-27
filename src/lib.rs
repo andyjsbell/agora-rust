@@ -812,6 +812,14 @@ impl Drop for AgoraSdk {
 mod tests {
     use super::*;
     use std::{thread, time};
+    use std::env;
+
+    fn agora_core_path() -> String {
+        match env::var("AGORA_CORE_PATH") {
+            Ok(path) => path,
+            _ => "".to_string(),
+        }
+    }
 
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
@@ -826,8 +834,11 @@ mod tests {
         });
 
         let config = Config::new();
-           
-        config.set_app_lite_dir("/home/andy/devel");
+        
+        let path = agora_core_path();
+        assert!(path != "", "AGORA_CORE_PATH not set!");
+
+        config.set_app_lite_dir(&path);
         config.set_mixing_enabled(true);
         config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
         config.set_idle_limit_sec(300);        
@@ -836,20 +847,21 @@ mod tests {
         config.set_mix_resolution(640, 480, 15, 500);        
         config.set_audio_indication_interval(0);
         
+        // At the moment we need to create a room called demo for this test
         let channel = "demo";
+        sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
-        let on_user = |uid| {
-            println!("on_user_joined -> {}", uid);   
+        // when we have a user record them as full in layout
+        let on_user = move |uid| {
             let layout = Layout::new();
             layout.set_regions(vec![Region::new(
-                uid, 0, 0, 1, 1, 1, 1 
+                uid, 0.0, 0.0, 1.0, 1.0, 1.0, 1 
             )]);
 
             sdk.set_video_mixing_layout(&layout);
         };
+
         events.set_on_user_joined(on_user);
-        
-        sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
         thread::sleep(time::Duration::from_millis(5000));
     }
