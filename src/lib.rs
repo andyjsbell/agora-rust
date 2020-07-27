@@ -460,7 +460,17 @@ impl Layout {
 
             index = index + 1;
         }
+
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*"] {
+                self->regions = regionList;
+            })
+        }
     }
+
+    // pub fn get_regions(&self) -> Vec<Region> {
+
+    // }
 }
 
 pub trait CallbackTrait {
@@ -896,5 +906,17 @@ mod tests {
         assert!(layout.canvas_height() == 100);
         layout.set_background_rgb("#ff0000");
         assert!(layout.background_rgb() == Ok("#ff0000"));
+    }
+
+    #[test]
+    fn layout_set_regions() {
+        let regions = vec![
+            Region::new(1, 1.0, 1.0, 1.0, 1.0, 1.0, 1),
+            Region::new(1, 1.0, 1.0, 1.0, 1.0, 1.0, 1),
+            Region::new(1, 1.0, 1.0, 1.0, 1.0, 1.0, 1)
+        ];
+
+        let layout = Layout::new();
+        layout.set_regions(regions);
     }
 }
