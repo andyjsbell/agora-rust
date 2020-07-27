@@ -343,15 +343,7 @@ impl Region {
             })
         }
     }
-
-    pub fn x(&self) -> f64 {
-        unsafe {
-            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
-                return self->x;
-            })
-        }
-    }
-
+    
     pub fn alpha(&self) -> f64 {
         unsafe {
             cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
