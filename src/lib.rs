@@ -374,25 +374,46 @@ impl Layout {
         }  
     }
 
-    // pub fn set_regions(&self, regions: Vec<Region>) {
+    pub fn set_regions(&self, regions: Vec<Region>) {
 
-    //     let count = regions.len();
-    //     unsafe {
-    //         cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
-    //                 count as "int"] {
-    //             self->regionCount = count;
-    //             if (self->regions != nullptr)
-    //                 delete self->regions;
+        cpp! {{
+            agora::linuxsdk::VideoMixingLayout::Region * regionList = nullptr;
+        }}
 
-    //             agora::linuxsdk::VideoMixingLayout::Region * regionList = new agora::linuxsdk::VideoMixingLayout::Region[count];
+        let count = regions.len() as u32;
+        unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                    count as "int"] {
+                
+                self->regionCount = count;
+                
+                if (self->regions != nullptr)
+                    delete self->regions;
+                
+                regionList = new agora::linuxsdk::VideoMixingLayout::Region[count];
+            })
+        }  
 
-    //         })
-    //     }  
+        let mut index = 0;
+        for region in &regions {
+            unsafe {
+                cpp!([  self as "agora::linuxsdk::VideoMixingLayout*",
+                        index as "int",
+                        region as "agora::linuxsdk::VideoMixingLayout::Region*"] {
+                    
+                    regionList[index].uid = region->uid;
+                    regionList[index].x = region->x;
+                    regionList[index].y = region->y;
+                    regionList[index].width = region->width;
+                    regionList[index].height = region->height;
+                    regionList[index].alpha = region->alpha;
+                    regionList[index].renderMode = region->renderMode; 
+                })
+            }
 
-    //     for region in &regions {
-            
-    //     }
-    // }
+            index = index + 1;
+        }
+    }
 
     pub fn set_region(&self, index: u32, x: u32, y: u32, width: u32, height: u32, uid: u32) {
         unsafe {
