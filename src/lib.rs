@@ -828,6 +828,13 @@ mod tests {
         }
     }
 
+    fn channel() -> String {
+        match env::var("CHANNEL") {
+            Ok(channel) => channel,
+            _ => "".to_string(),
+        }
+    }
+
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
     fn recorder_create() {
@@ -846,6 +853,8 @@ mod tests {
         assert!(path != "", "AGORA_CORE_PATH not set!");
         let app_id = app_id();
         assert!(app_id != "", "APP_ID not set!");
+        let channel = channel();
+        assert!(channel != "", "CHANNEL not set!");
 
         config.set_app_lite_dir(&path);
         config.set_mixing_enabled(true);
@@ -857,8 +866,7 @@ mod tests {
         config.set_audio_indication_interval(0);
         
         // At the moment we need to create a room called demo for this test
-        let channel = "demo";
-        sdk.create_channel(&app_id, "", channel, 0, &config);
+        sdk.create_channel(&app_id, "", &channel, 0, &config);
         
         // when we have a user record them as full in layout
         let on_user = move |uid| {
