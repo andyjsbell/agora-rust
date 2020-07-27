@@ -789,16 +789,16 @@ mod tests {
         
         let channel = "demo";
         
-        // let on_user = |uid| {
-        //     println!("on_user_joined -> {}", uid);   
-        //     let layout = Layout::new();
-        //     layout.set_region_count(1);
-        //     layout.set_region(0, 0, 0, 1, 1, uid);
-        //     layout.set_background_rgb("#00ff00");
+        let on_user = |uid| {
+            println!("on_user_joined -> {}", uid);   
+            let layout = Layout::new();
+            layout.set_regions(vec![Region::new(
+                uid, 0, 0, 1, 1, 1, 1 
+            )]);
 
-        //     sdk.set_video_mixing_layout(&layout);
-        // };
-        // events.set_on_user_joined(on_user);
+            sdk.set_video_mixing_layout(&layout);
+        };
+        events.set_on_user_joined(on_user);
         
         sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
