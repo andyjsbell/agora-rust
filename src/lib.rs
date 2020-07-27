@@ -738,7 +738,6 @@ impl Drop for AgoraSdk {
 mod tests {
     use super::*;
     use std::{thread, time};
-    use std::sync::Arc;
 
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
