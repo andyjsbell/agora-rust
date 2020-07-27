@@ -895,7 +895,6 @@ mod tests {
         layout.set_canvas_height(100);
         assert!(layout.canvas_height() == 100);
         layout.set_background_rgb("#ff0000");
-        assert!(layout.background_rgb() == "#ff0000");
-        
+        assert!(layout.background_rgb() == Ok("#ff0000"));
     }
 }
