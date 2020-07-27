@@ -468,9 +468,24 @@ impl Layout {
         }
     }
 
-    // pub fn get_regions(&self) -> Vec<Region> {
+    pub fn get_regions(&self) -> Vec<Region> {
+        let mut regions = Vec::new();
+        let count = unsafe {
+            cpp!([  self as "agora::linuxsdk::VideoMixingLayout*"] -> u32 as "int" {
+                return self->regionCount;
+            })
+        };
 
-    // }
+        for index in 0..count {
+            let region = unsafe {
+                cpp!([  self as "agora::linuxsdk::VideoMixingLayout*", index as "int"] -> Region as "agora::linuxsdk::VideoMixingLayout::Region" {
+                    return self->regions[index];
+                })
+            };
+            regions.push(region);
+        }
+        regions
+    }
 }
 
 pub trait CallbackTrait {
@@ -912,11 +927,17 @@ mod tests {
     fn layout_set_regions() {
         let regions = vec![
             Region::new(1, 1.0, 1.0, 1.0, 1.0, 1.0, 1),
-            Region::new(1, 1.0, 1.0, 1.0, 1.0, 1.0, 1),
-            Region::new(1, 1.0, 1.0, 1.0, 1.0, 1.0, 1)
+            Region::new(2, 1.0, 1.0, 1.0, 1.0, 1.0, 1),
+            Region::new(3, 1.0, 1.0, 1.0, 1.0, 1.0, 1)
         ];
 
         let layout = Layout::new();
         layout.set_regions(regions);
+
+        let get_regions = layout.get_regions();
+        assert!(get_regions.len() == 3);
+        assert!(get_regions[0].uid() == 1);
+        assert!(get_regions[1].uid() == 2);
+        assert!(get_regions[2].uid() == 3);
     }
 }
