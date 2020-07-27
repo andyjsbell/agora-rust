@@ -303,6 +303,70 @@ impl Region {
             return region;
         })}
     }
+
+    pub fn uid(&self) -> u32 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> u32 as "int" {
+                return self->uid;
+            })
+        }
+    }
+
+    pub fn x(&self) -> f64 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
+                return self->x;
+            })
+        }
+    }
+
+    pub fn y(&self) -> f64 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
+                return self->y;
+            })
+        }
+    }
+
+    pub fn width(&self) -> f64 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
+                return self->width;
+            })
+        }
+    }
+
+    pub fn height(&self) -> f64 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
+                return self->height;
+            })
+        }
+    }
+
+    pub fn x(&self) -> f64 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
+                return self->x;
+            })
+        }
+    }
+
+    pub fn alpha(&self) -> f64 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
+                return self->alpha;
+            })
+        }
+    }
+
+    pub fn render_mode(&self) -> u32 {
+        unsafe {
+            cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> u32 as "int" {
+                return self->renderMode;
+            })
+        }
+    }
 }
 
 cpp_class!(pub unsafe struct Layout as "agora::linuxsdk::VideoMixingLayout");
@@ -811,4 +875,20 @@ mod tests {
         config.set_audio_indication_interval(10);
         assert!(config.audio_indication_interval() == 10);
     }
+
+    #[test]
+    fn config_new_region() {
+        let uid = 1;
+        let x = 1.0;
+        let y = 1.0;
+        let width = 1.0;
+        let height = 1.0;
+        let alpha = 1.0;
+        let render_mode = 1;
+
+        let region = Region::new(uid, x, y, width, height, alpha, render_mode);
+        config.set_audio_indication_interval(10);
+        assert!(config.audio_indication_interval() == 10);
+    }
+
 }
