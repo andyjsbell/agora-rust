@@ -1,4 +1,4 @@
-#![recursion_limit = "512"]
+#![recursion_limit = "1024"]
 use cpp::cpp;
 use cpp::cpp_class;
 use std::ffi::{CString, CStr};
@@ -508,63 +508,112 @@ cpp!{{
         }
         
         virtual void onWarning(int warn) {
+            (void)warn;
         }
         virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
+            (void)channelId;
+            (void)uid;
         }
         virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
+            (void)code;
         }
     
         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
+            (void)infos;
             rust!(OnUserJoinedImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", uid: u32 as "int"] {
                 callback.on_user_joined(uid)
             });
         }
     
         virtual void onRemoteVideoStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
+            (void)uid;
+            (void)state;
+            (void)reason;
         }
     
         virtual void onRemoteAudioStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
+            (void)uid;
+            (void)state;
+            (void)reason;
         }
     
         virtual void onUserOffline(agora::linuxsdk::uid_t uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
+            (void)reason;
             rust!(OnUserOfflineImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", uid: u32 as "int"] {
                 callback.on_user_left(uid)
             });
         }
     
         virtual void audioFrameReceived(unsigned int uid, const agora::linuxsdk::AudioFrame *frame) const {
+            (void)uid;
+            (void)frame;
         }
         virtual void videoFrameReceived(unsigned int uid, const agora::linuxsdk::VideoFrame *frame) const {
+            (void)uid;
+            (void)frame;
         }
         virtual void onActiveSpeaker(uid_t uid) {
+            (void)uid;
         }
         virtual void onAudioVolumeIndication(const agora::linuxsdk::AudioVolumeInfo* speakers, unsigned int speakerNum) {
+            (void)speakers;
+            (void)speakerNum;
         }
     
         virtual void onFirstRemoteVideoDecoded(uid_t uid, int width, int height, int elapsed) {
+            (void)uid;
+            (void)width;
+            (void)height;
+            (void)elapsed;
         }
     
-        virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {}
+        virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {
+            (void)uid;
+            (void)elapsed;
+        }
     
-        virtual void onReceivingStreamStatusChanged(bool receivingAudio, bool receivingVideo) {}
+        virtual void onReceivingStreamStatusChanged(bool receivingAudio, bool receivingVideo) {
+            (void)receivingAudio;
+            (void)receivingVideo;
+        }
     
         virtual void onConnectionLost() {}
     
         virtual void onConnectionInterrupted() {}
     
-        virtual void onRejoinChannelSuccess(const char* channelId, uid_t uid) {}
+        virtual void onRejoinChannelSuccess(const char* channelId, uid_t uid) {
+            (void)channelId;
+            (void)uid;
+        }
     
-        virtual void onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason){}
+        virtual void onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason){
+            (void)state;
+            (void)reason;
+        }
     
-        virtual void onRecordingStats(const agora::linuxsdk::RecordingStats& stats){}
+        virtual void onRecordingStats(const agora::linuxsdk::RecordingStats& stats){
+            (void)stats;
+        }
     
-        virtual void onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats){}
+        virtual void onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats){
+            (void)uid;
+            (void)stats;
+        }
     
-        virtual void onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats){}
+        virtual void onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats){
+            (void)uid;
+            (void)stats;
+        }
             
-        virtual void onLocalUserRegistered(uid_t uid, const char* userAccount){}
+        virtual void onLocalUserRegistered(uid_t uid, const char* userAccount){
+            (void)uid;
+            (void)userAccount;
+        }
     
-        virtual void onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info){}
+        virtual void onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info){
+            (void)uid;
+            (void)info;
+        }
     };    
 }}
 

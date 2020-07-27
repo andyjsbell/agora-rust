@@ -30,15 +30,16 @@ void SplitString(const std::string& s, std::set<std::string>& v, const std::stri
     v.insert(s.substr(pos1));
 }
 
-AgoraSdk::AgoraSdk(agora::recording::IRecordingEngineEventHandler * handler) :
+AgoraSdk::AgoraSdk() :
     m_level(agora::linuxsdk::AGORA_LOG_LEVEL_INFO)
     , m_mediaKeepTime(0)
     , m_lastAudioKeepTime(0)
     , m_lastVideoKeepTime(0)
     , m_subscribedVideoUids()
     , m_subscribedAudioUids()
+    , m_handler(nullptr)
     , m_keepLastFrame(false)
-    , m_handler(handler)
+    
 {
   m_engine = NULL;
   m_stopped = false;

@@ -54,68 +54,9 @@ struct AudioFrameInfo {
     {};
 };
 
-// class AgoraSdkEvents :  virtual public agora::recording::IRecordingEngineEventHandler {
-//     protected:
-//     virtual void onError(int error, agora::linuxsdk::STAT_CODE_TYPE stat_code) {
-//         //sdk->stoppedOnError();
-//     }
-//     virtual void onWarning(int warn) {
-//     }
-//     virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
-//     }
-//     virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
-//     }
-
-//     virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
-//     }
-
-//     virtual void onRemoteVideoStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
-//     }
-
-//     virtual void onRemoteAudioStreamStateChanged(agora::linuxsdk::uid_t uid, agora::linuxsdk::RemoteStreamState state, agora::linuxsdk::RemoteStreamStateChangedReason reason) {
-//     }
-
-//     virtual void onUserOffline(agora::linuxsdk::uid_t uid, agora::linuxsdk::USER_OFFLINE_REASON_TYPE reason) {
-//     }
-
-//     virtual void audioFrameReceived(unsigned int uid, const agora::linuxsdk::AudioFrame *frame) const {
-//     }
-//     virtual void videoFrameReceived(unsigned int uid, const agora::linuxsdk::VideoFrame *frame) const {
-//     }
-//     virtual void onActiveSpeaker(uid_t uid) {
-//     }
-//     virtual void onAudioVolumeIndication(const agora::linuxsdk::AudioVolumeInfo* speakers, unsigned int speakerNum) {
-//     }
-
-//     virtual void onFirstRemoteVideoDecoded(uid_t uid, int width, int height, int elapsed) {
-//     }
-
-//     virtual void onFirstRemoteAudioFrame(uid_t uid, int elapsed) {}
-
-//     virtual void onReceivingStreamStatusChanged(bool receivingAudio, bool receivingVideo) {}
-
-//     virtual void onConnectionLost() {}
-
-//     virtual void onConnectionInterrupted() {}
-
-//     virtual void onRejoinChannelSuccess(const char* channelId, uid_t uid) {}
-
-//     virtual void onConnectionStateChanged(agora::linuxsdk::ConnectionStateType state, agora::linuxsdk::ConnectionChangedReasonType reason){}
-
-//     virtual void onRecordingStats(const agora::linuxsdk::RecordingStats& stats){}
-
-//     virtual void onRemoteVideoStats(uid_t uid, const agora::linuxsdk::RemoteVideoStats& stats){}
-
-//     virtual void onRemoteAudioStats(uid_t uid, const agora::linuxsdk::RemoteAudioStats& stats){}
-        
-//     virtual void onLocalUserRegistered(uid_t uid, const char* userAccount){}
-
-//     virtual void onUserInfoUpdated(uid_t uid, const agora::linuxsdk::UserInfo& info){}
-// }
-
 class AgoraSdk {
     public:
-        AgoraSdk(agora::recording::IRecordingEngineEventHandler * handler = nullptr);
+        AgoraSdk();
         virtual ~AgoraSdk();
         virtual void setHandler(agora::recording::IRecordingEngineEventHandler * handler) {
             if (m_handler == nullptr) {
