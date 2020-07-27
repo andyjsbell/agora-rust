@@ -343,7 +343,7 @@ impl Region {
             })
         }
     }
-    
+
     pub fn alpha(&self) -> f64 {
         unsafe {
             cpp!([self as "agora::linuxsdk::VideoMixingLayout::Region*"] -> f64 as "double" {
@@ -765,16 +765,16 @@ mod tests {
         
         let channel = "demo";
         
-        let on_user = |uid| {
-            println!("on_user_joined -> {}", uid);   
-            let layout = Layout::new();
-            layout.set_region_count(1);
-            layout.set_region(0, 0, 0, 1, 1, uid);
-            layout.set_background_rgb("#00ff00");
+        // let on_user = |uid| {
+        //     println!("on_user_joined -> {}", uid);   
+        //     let layout = Layout::new();
+        //     layout.set_region_count(1);
+        //     layout.set_region(0, 0, 0, 1, 1, uid);
+        //     layout.set_background_rgb("#00ff00");
 
-            sdk.set_video_mixing_layout(&layout);
-        };
-        events.set_on_user_joined(on_user);
+        //     sdk.set_video_mixing_layout(&layout);
+        // };
+        // events.set_on_user_joined(on_user);
         
         sdk.create_channel("e544083a6e54401c8f729815b2a42022", "", channel, 0, &config);
         
@@ -879,8 +879,13 @@ mod tests {
         let render_mode = 1;
 
         let region = Region::new(uid, x, y, width, height, alpha, render_mode);
-        config.set_audio_indication_interval(10);
-        assert!(config.audio_indication_interval() == 10);
+        
+        assert!(region.x() == x);
+        assert!(region.y() == y);
+        assert!(region.width() == width);
+        assert!(region.height() == height);
+        assert!(region.alpha() == alpha);
+        assert!(region.render_mode() == render_mode);
     }
 
 }
