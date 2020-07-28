@@ -9,6 +9,7 @@ build = "build.rs"
 
 [dependencies]
 cpp = "0.5"
+uuid = { version = "0.8", features = ["serde", "v4"] }
 
 [build-dependencies]
 cpp_build = "0.5"
