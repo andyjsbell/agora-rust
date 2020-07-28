@@ -836,9 +836,8 @@ mod tests {
     use std::{thread, time};
     use uuid::Uuid;
     use std::io::prelude::*;
-    use std::fs::{self, DirEntry, File};
-    use std::path::Path;
-
+    use std::fs::{self, File};
+    
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
     fn recorder_create() {
@@ -849,6 +848,7 @@ mod tests {
 
         events.set_on_error(|error, stat_code| {
             println!("on_error -> {} {}", error, stat_code);
+            assert!(error == 0, "error received");
         });
 
         // Set up configuration file for recordings
