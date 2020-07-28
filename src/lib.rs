@@ -629,15 +629,21 @@ pub struct AgoraSdkEvents {
 impl CallbackTrait for AgoraSdkEvents {
     
     fn on_error(&mut self, error: u32, stat_code: u32) {
-        self.on_error.as_mut().unwrap()(error, stat_code);
+        if self.on_error.is_some() {
+            self.on_error.as_mut().unwrap()(error, stat_code);
+        }
     }
 
     fn on_user_joined(&mut self, uid: u32) {
-        self.on_user_joined.as_mut().unwrap()(uid);
+        if self.on_user_joined.is_some() {
+            self.on_user_joined.as_mut().unwrap()(uid);
+        }
     }
 
     fn on_user_left(&mut self, uid: u32) {
-        self.on_user_left.as_mut().unwrap()(uid);
+        if self.on_user_left.is_some() {
+            self.on_user_left.as_mut().unwrap()(uid);
+        }
     }
 }
 
