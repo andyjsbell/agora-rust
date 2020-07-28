@@ -878,7 +878,7 @@ mod tests {
         config.set_audio_indication_interval(0);
         
         // At the moment we need to create a room called demo for this test
-        sdk.create_channel(&app_id, "", &channel, 0, &config);
+        assert!(sdk.create_channel(&app_id, "", &channel, 0, &config));
         
         // when we have a user record them as full in layout
         let on_user = move |uid| {
