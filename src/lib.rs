@@ -891,6 +891,9 @@ mod tests {
             let layout = Layout::new();
             layout.set_regions(vec![Region::new(
                 uid, 0.0, 0.0, 1.0, 1.0, 1.0, 1 
+            ),
+            Region::new(
+                uid, 0.5, 0.5, 0.5, 0.5, 1.0, 1 
             )]);
 
             sdk.set_video_mixing_layout(&layout);
