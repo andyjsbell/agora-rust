@@ -3,6 +3,7 @@ use cpp::cpp;
 use cpp::cpp_class;
 use std::ffi::{CString, CStr};
 use std::os::raw::c_char;
+use std::env;
 
 cpp!{{
     #include <iostream>
@@ -808,36 +809,35 @@ impl Drop for AgoraSdk {
     }    
 }
 
+pub fn agora_core_path() -> String {
+    match env::var("AGORA_CORE_PATH") {
+        Ok(path) => path,
+        _ => "".to_string(),
+    }
+}
+
+pub fn app_id() -> String {
+    match env::var("APP_ID") {
+        Ok(id) => id,
+        _ => "".to_string(),
+    }
+}
+
+pub fn channel() -> String {
+    match env::var("CHANNEL") {
+        Ok(channel) => channel,
+        _ => "".to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::{thread, time};
-    use std::env;
     use uuid::Uuid;
     use std::io::prelude::*;
     use std::fs::{self, DirEntry, File};
     use std::path::Path;
-
-    fn agora_core_path() -> String {
-        match env::var("AGORA_CORE_PATH") {
-            Ok(path) => path,
-            _ => "".to_string(),
-        }
-    }
-
-    fn app_id() -> String {
-        match env::var("APP_ID") {
-            Ok(id) => id,
-            _ => "".to_string(),
-        }
-    }
-
-    fn channel() -> String {
-        match env::var("CHANNEL") {
-            Ok(channel) => channel,
-            _ => "".to_string(),
-        }
-    }
 
     // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
