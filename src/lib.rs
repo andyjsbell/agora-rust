@@ -496,7 +496,7 @@ pub trait CallbackTrait {
 }
 
 cpp!{{ 
-    struct CallbackPtr { void *a,*b; };
+    struct CallbackPtr { void *a, *b; };
     class AgoraSdkEvents :  virtual public agora::recording::IRecordingEngineEventHandler {
         public:
         CallbackPtr callback;
@@ -521,6 +521,7 @@ cpp!{{
     
         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
             (void)infos;
+            std::cout << "callback:" << &callback << std::endl;
             rust!(OnUserJoinedImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", uid: u32 as "int"] {
                 callback.on_user_joined(uid)
             });
@@ -621,28 +622,33 @@ cpp!{{
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
     initialised: bool,
-    on_error: Option<Box<dyn FnMut(u32, u32)>>,
-    on_user_joined: Option<Box<dyn FnMut(u32)>>,   
-    on_user_left: Option<Box<dyn FnMut(u32)>>, 
+    events: Option<Box<dyn Callbacks>>,
+}
+
+pub trait Callbacks {
+    fn error(&self, error: u32, stat_code: u32);
+    fn joined(&mut self, uid: u32);
+    fn left(&mut self, uid: u32);
 }
 
 impl CallbackTrait for AgoraSdkEvents {
     
     fn on_error(&mut self, error: u32, stat_code: u32) {
-        if self.on_error.is_some() {
-            self.on_error.as_mut().unwrap()(error, stat_code);
+        if self.events.is_some() {
+            self.events.as_mut().unwrap().error(error, stat_code);
         }
     }
 
     fn on_user_joined(&mut self, uid: u32) {
-        if self.on_user_joined.is_some() {
-            self.on_user_joined.as_mut().unwrap()(uid);
+        println!("on user joined");
+        if self.events.is_some() {
+            self.events.as_mut().unwrap().joined(uid);
         }
     }
 
     fn on_user_left(&mut self, uid: u32) {
-        if self.on_user_left.is_some() {
-            self.on_user_left.as_mut().unwrap()(uid);
+        if self.events.is_some() {
+            self.events.as_mut().unwrap().left(uid);
         }
     }
 }
@@ -658,25 +664,13 @@ impl AgoraSdkEvents {
         AgoraSdkEvents {
             rawptr,
             initialised: false,
-            on_error: None,
-            on_user_joined: None,
-            on_user_left: None,
+            events: None,
         }
     }
 
-    pub fn set_on_error(&mut self, on_error: impl FnMut(u32, u32) + 'static) {
-        self.on_error = Some(Box::new(on_error));
-        self.connect()
-    }
-
-    pub fn set_on_user_joined(&mut self, on_user_joined: impl FnMut(u32) + 'static) {
-        self.on_user_joined = Some(Box::new(on_user_joined));
-        self.connect()
-    }
-
-    pub fn set_on_user_left(&mut self, on_user_left: impl FnMut(u32) + 'static) {
-        self.on_user_left = Some(Box::new(on_user_left));
-        self.connect()
+    pub fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
+        self.events = Some(callback);
+        self.connect();
     }
 
     pub fn connect(&mut self) {
@@ -691,9 +685,10 @@ impl AgoraSdkEvents {
         unsafe {
             cpp!([  rawptr as "AgoraSdkEvents*",
                     inst_ptr as "CallbackPtr"] {
+                std::cout << "callback set as:" << &inst_ptr << std::endl;
                 rawptr->callback = inst_ptr;
             })
-        } 
+        }        
     }
 }
 
@@ -737,7 +732,6 @@ impl AgoraSdk {
     }
 
     pub fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool {
-        
         let me = self.sdk;
         let app_id = CString::new(app_id).unwrap().into_raw();
         let name = CString::new(name).unwrap().into_raw();
@@ -753,7 +747,6 @@ impl AgoraSdk {
                     ] -> bool as "bool" {
                         return me->createChannel(app_id, channel_key, name, uid, *config);
                     }
-
             )
         }
     }
@@ -843,82 +836,134 @@ mod tests {
     use uuid::Uuid;
     use std::io::prelude::*;
     use std::fs::{self, File};
+    use std::rc::Rc;
+    use std::cell::RefCell;
+    #[test]
+    fn callback() {
+        struct TestCallbacks {}
+        impl Callbacks for TestCallbacks {
+            fn error(&self, error: u32, stat_code: u32) {
+                println!("on_error -> {} {}", error, stat_code);
+                assert!(error == 0, "error received");
+            }
+            fn joined(&mut self, uid: u32) {
+                println!("joined {}", uid);
+            }
+            fn left(&mut self, uid: u32) {
+                println!("user left");
+            }
+        }
+
+        let test: Option<Box<dyn Callbacks>> = Some(Box::new(TestCallbacks{}));
+        if let Some(mut b) = test {
+            b.joined(100);
+        }
+    }
     
-    // https://github.com/andyjsbell/agora-record/blob/master/build-node-gyp/src/agora_node_ext/agora_node_recording.cpp
     #[test]
     fn recorder_create() {
-        
-        let mut events = AgoraSdkEvents::new();
-        let mut sdk = AgoraSdk::new();
-        sdk.set_handler(&events);
-
-        events.set_on_error(|error, stat_code| {
-            println!("on_error -> {} {}", error, stat_code);
-            assert!(error == 0, "error received");
-        });
-
-        // Set up configuration file for recordings
-        let path = agora_core_path();
-        assert!(path != "", "AGORA_CORE_PATH not set!");
-        let app_id = app_id();
-        assert!(app_id != "", "APP_ID not set!");
-        let channel = channel();
-        assert!(channel != "", "CHANNEL not set!");
-        let cwd = env::current_dir().expect("current working directory");
-        let output = format!("{}/{}", cwd.display(), Uuid::new_v4());
-        fs::create_dir(&output).expect("create directory for recordings");
-        let json_cfg_contents = format!("{{\"Recording_Dir\":\"{}\"}}", output);
-        let output_json_cfg = format!("{}/cfg.json", output);
-        let mut file = File::create(&output_json_cfg).expect("create cfg.json for recordings");
-        file.write_all(json_cfg_contents.as_bytes()).expect("write config contents");
-
-        let config = Config::new();       
-        config.set_config_path(&output_json_cfg);
-        config.set_app_lite_dir(&path);
-        config.set_mixing_enabled(true);
-        config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
-        config.set_idle_limit_sec(300);        
-        config.set_channel_profile(ChannelProfile::LiveBroadcast);
-        config.set_trigger_mode(TriggerMode::Automatic);
-        config.set_mix_resolution(640, 480, 15, 500);        
-        config.set_audio_indication_interval(0);
-        
-        // At the moment we need to create a room called demo for this test
-        assert!(sdk.create_channel(&app_id, "", &channel, 0, &config));
-        
-        // when we have a user record them as full in layout
-        let on_user = move |uid| {
-            let layout = Layout::new();
-            layout.set_regions(vec![Region::new(
-                uid, 0.0, 0.0, 1.0, 1.0, 1.0, 1 
-            ),
-            Region::new(
-                uid, 0.5, 0.5, 0.5, 0.5, 1.0, 1 
-            )]);
-
-            sdk.set_video_mixing_layout(&layout);
+        struct Recorder {
+            sdk: Rc<RefCell<AgoraSdk>>,
         };
 
-        events.set_on_user_joined(on_user);
-        
-        thread::sleep(time::Duration::from_millis(5000));
+        struct RecorderCallbacks {
+            sdk: Rc<RefCell<AgoraSdk>>,
+        }
 
-        // check we have generated an mp4 file
-        let result = fs::read_dir(&output).expect("read output directory");
-        let v : Vec<_> = result
-                            .filter_map(|r|r.ok()) // filter oks
-                            .map(|de|de.path())
-                            .filter(|p|p.is_file())
-                            .collect();
+        impl Callbacks for RecorderCallbacks {
+            fn error(&self, error: u32, stat_code: u32) {
+                println!("on_error -> {} {}", error, stat_code);
+                assert!(error == 0, "error received");
+            }
+            fn joined(&mut self, uid: u32) {
+                // when we have a user record them as full in layout
+                let layout = Layout::new();
+                layout.set_regions(vec![Region::new(
+                    uid, 0.0, 0.0, 1.0, 1.0, 1.0, 1 
+                ),
+                Region::new(
+                    uid, 0.5, 0.5, 0.5, 0.5, 1.0, 1 
+                )]);
+    
+                (*self.sdk.borrow_mut()).set_video_mixing_layout(&layout);
+            }
+            fn left(&mut self, uid: u32) {
+                println!("user left");
+            }
+        }
+
+        impl Recorder {
+            pub fn new() -> Self {
+                let sdk = AgoraSdk::new();
+                let sdk = Rc::new(RefCell::new(sdk));
+
+                Recorder {
+                    sdk
+                }
+            }
+
+            pub fn start(&mut self) {
+                
+                let mut events = AgoraSdkEvents::new();
+                let callbacks = RecorderCallbacks {
+                    sdk: self.sdk.clone(),
+                };
+                events.set_callback(Box::new(callbacks));
+
+                (*self.sdk.borrow_mut()).set_handler(&events);
         
-        let v : Vec<_> = v.iter()
-                        .filter_map(|v|v.extension())
-                        .filter(|ext|ext.to_str() == Some("mp4")).collect();
+                // Set up configuration file for recordings
+                let path = agora_core_path();
+                assert!(path != "", "AGORA_CORE_PATH not set!");
+                let app_id = app_id();
+                assert!(app_id != "", "APP_ID not set!");
+                let channel = channel();
+                assert!(channel != "", "CHANNEL not set!");
+                let cwd = env::current_dir().expect("current working directory");
+                let output = format!("{}/{}", cwd.display(), Uuid::new_v4());
+                fs::create_dir(&output).expect("create directory for recordings");
+                let json_cfg_contents = format!("{{\"Recording_Dir\":\"{}\"}}", output);
+                let output_json_cfg = format!("{}/cfg.json", output);
+                let mut file = File::create(&output_json_cfg).expect("create cfg.json for recordings");
+                file.write_all(json_cfg_contents.as_bytes()).expect("write config contents");
         
-        fs::remove_dir_all(&output).expect("remove output directory");
-        assert!(v.len() == 1, "no mp4 file created");        
+                let config = Config::new();       
+                config.set_config_path(&output_json_cfg);
+                config.set_app_lite_dir(&path);
+                config.set_mixing_enabled(true);
+                config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
+                config.set_idle_limit_sec(300);        
+                config.set_channel_profile(ChannelProfile::LiveBroadcast);
+                config.set_trigger_mode(TriggerMode::Automatic);
+                config.set_mix_resolution(640, 480, 15, 500);        
+                config.set_audio_indication_interval(0);
+                
+                // // At the moment we need to create a room called demo for this test
+                assert!((*self.sdk.borrow_mut()).create_channel(&app_id, "", &channel, 0, &config));
+                
+                thread::sleep(time::Duration::from_millis(5000));
+        
+                // check we have generated an mp4 file
+                let result = fs::read_dir(&output).expect("read output directory");
+                let v : Vec<_> = result
+                                    .filter_map(|r|r.ok()) // filter oks
+                                    .map(|de|de.path())
+                                    .filter(|p|p.is_file())
+                                    .collect();
+                
+                let v : Vec<_> = v.iter()
+                                .filter_map(|v|v.extension())
+                                .filter(|ext|ext.to_str() == Some("mp4")).collect();
+                
+                fs::remove_dir_all(&output).expect("remove output directory");
+                assert!(v.len() == 1, "no mp4 file created");
+            }
+        }
+
+        let mut recorder = Recorder::new();
+        recorder.start();
     }
-
+    
     #[test]
     fn recorder_release() {
         let sdk = AgoraSdk::new();
