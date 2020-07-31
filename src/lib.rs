@@ -622,8 +622,7 @@ cpp!{{
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
     initialised: bool,
-    pub events: Option<Box<dyn Callbacks>>,
-    // events: Option<Box<dyn Callbacks>>,
+    events: Option<Box<dyn Callbacks>>,
 }
 
 pub trait Callbacks {
