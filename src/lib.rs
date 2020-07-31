@@ -622,7 +622,8 @@ cpp!{{
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
     initialised: bool,
-    events: Option<Box<dyn Callbacks>>,
+    pub events: Option<Box<dyn Callbacks>>,
+    // events: Option<Box<dyn Callbacks>>,
 }
 
 pub trait Callbacks {
@@ -862,16 +863,15 @@ mod tests {
     
     #[test]
     fn recorder_create() {
-        struct TestCallbacks {
+        struct Recorder {
             sdk: Rc<RefCell<AgoraSdk>>,
         };
 
-        impl TestCallbacks {
-            pub fn new(sdk: Rc<RefCell<AgoraSdk>>) -> Self {
-                TestCallbacks {sdk}
-            }
+        struct RecorderCallbacks {
+            sdk: Rc<RefCell<AgoraSdk>>,
         }
-        impl Callbacks for TestCallbacks {
+
+        impl Callbacks for RecorderCallbacks {
             fn error(&self, error: u32, stat_code: u32) {
                 println!("on_error -> {} {}", error, stat_code);
                 assert!(error == 0, "error received");
@@ -893,59 +893,76 @@ mod tests {
             }
         }
 
-        let sdk = AgoraSdk::new();
-        let sdk = Rc::new(RefCell::new(sdk));
-        let sdk_clone = sdk.clone();
-        let mut test_callbacks = TestCallbacks::new(sdk_clone);
-        let mut events = AgoraSdkEvents::new();
-        events.set_callback(Box::new(test_callbacks));
-        (*sdk.borrow_mut()).set_handler(&events);
+        impl Recorder {
+            pub fn new() -> Self {
+                let sdk = AgoraSdk::new();
+                let sdk = Rc::new(RefCell::new(sdk));
 
-        // Set up configuration file for recordings
-        let path = agora_core_path();
-        assert!(path != "", "AGORA_CORE_PATH not set!");
-        let app_id = app_id();
-        assert!(app_id != "", "APP_ID not set!");
-        let channel = channel();
-        assert!(channel != "", "CHANNEL not set!");
-        let cwd = env::current_dir().expect("current working directory");
-        let output = format!("{}/{}", cwd.display(), Uuid::new_v4());
-        fs::create_dir(&output).expect("create directory for recordings");
-        let json_cfg_contents = format!("{{\"Recording_Dir\":\"{}\"}}", output);
-        let output_json_cfg = format!("{}/cfg.json", output);
-        let mut file = File::create(&output_json_cfg).expect("create cfg.json for recordings");
-        file.write_all(json_cfg_contents.as_bytes()).expect("write config contents");
+                Recorder {
+                    sdk
+                }
+            }
 
-        let config = Config::new();       
-        config.set_config_path(&output_json_cfg);
-        config.set_app_lite_dir(&path);
-        config.set_mixing_enabled(true);
-        config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
-        config.set_idle_limit_sec(300);        
-        config.set_channel_profile(ChannelProfile::LiveBroadcast);
-        config.set_trigger_mode(TriggerMode::Automatic);
-        config.set_mix_resolution(640, 480, 15, 500);        
-        config.set_audio_indication_interval(0);
-        
-        // // At the moment we need to create a room called demo for this test
-        assert!((*sdk.borrow_mut()).create_channel(&app_id, "", &channel, 0, &config));
-        
-        thread::sleep(time::Duration::from_millis(5000));
+            pub fn start(&mut self) {
+                
+                let mut events = AgoraSdkEvents::new();
+                let callbacks = RecorderCallbacks {
+                    sdk: self.sdk.clone(),
+                };
+                events.set_callback(Box::new(callbacks));
 
-        // check we have generated an mp4 file
-        let result = fs::read_dir(&output).expect("read output directory");
-        let v : Vec<_> = result
-                            .filter_map(|r|r.ok()) // filter oks
-                            .map(|de|de.path())
-                            .filter(|p|p.is_file())
-                            .collect();
+                (*self.sdk.borrow_mut()).set_handler(&events);
         
-        let v : Vec<_> = v.iter()
-                        .filter_map(|v|v.extension())
-                        .filter(|ext|ext.to_str() == Some("mp4")).collect();
+                // Set up configuration file for recordings
+                let path = agora_core_path();
+                assert!(path != "", "AGORA_CORE_PATH not set!");
+                let app_id = app_id();
+                assert!(app_id != "", "APP_ID not set!");
+                let channel = channel();
+                assert!(channel != "", "CHANNEL not set!");
+                let cwd = env::current_dir().expect("current working directory");
+                let output = format!("{}/{}", cwd.display(), Uuid::new_v4());
+                fs::create_dir(&output).expect("create directory for recordings");
+                let json_cfg_contents = format!("{{\"Recording_Dir\":\"{}\"}}", output);
+                let output_json_cfg = format!("{}/cfg.json", output);
+                let mut file = File::create(&output_json_cfg).expect("create cfg.json for recordings");
+                file.write_all(json_cfg_contents.as_bytes()).expect("write config contents");
         
-        fs::remove_dir_all(&output).expect("remove output directory");
-        assert!(v.len() == 1, "no mp4 file created");
+                let config = Config::new();       
+                config.set_config_path(&output_json_cfg);
+                config.set_app_lite_dir(&path);
+                config.set_mixing_enabled(true);
+                config.set_mixed_video_audio(MixedAvCodecType::MixedAvCodecV2);
+                config.set_idle_limit_sec(300);        
+                config.set_channel_profile(ChannelProfile::LiveBroadcast);
+                config.set_trigger_mode(TriggerMode::Automatic);
+                config.set_mix_resolution(640, 480, 15, 500);        
+                config.set_audio_indication_interval(0);
+                
+                // // At the moment we need to create a room called demo for this test
+                assert!((*self.sdk.borrow_mut()).create_channel(&app_id, "", &channel, 0, &config));
+                
+                thread::sleep(time::Duration::from_millis(5000));
+        
+                // check we have generated an mp4 file
+                let result = fs::read_dir(&output).expect("read output directory");
+                let v : Vec<_> = result
+                                    .filter_map(|r|r.ok()) // filter oks
+                                    .map(|de|de.path())
+                                    .filter(|p|p.is_file())
+                                    .collect();
+                
+                let v : Vec<_> = v.iter()
+                                .filter_map(|v|v.extension())
+                                .filter(|ext|ext.to_str() == Some("mp4")).collect();
+                
+                fs::remove_dir_all(&output).expect("remove output directory");
+                assert!(v.len() == 1, "no mp4 file created");
+            }
+        }
+
+        let mut recorder = Recorder::new();
+        recorder.start();
     }
     
     #[test]
