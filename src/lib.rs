@@ -707,7 +707,7 @@ struct AgoraSdk {
 
 unsafe impl Send for AgoraSdk {}
 
-pub trait IAgoraSdk: RawPtr {
+pub trait IAgoraSdk: RawPtr + Send {
     fn set_handler(&mut self, emitter: &dyn Emitter);
     fn set_keep_last_frame(&self, keep : bool);
     fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool;
