@@ -701,7 +701,7 @@ impl Emitter for AgoraSdkEvents {
     }
 }
 
-struct AgoraSdk {
+pub struct AgoraSdk {
     sdk: *mut u32,
 }
 
