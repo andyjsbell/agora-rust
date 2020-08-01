@@ -619,6 +619,11 @@ cpp!{{
     };    
 }}
 
+pub trait IAgoraSdkEvents {
+    fn set_callback(&mut self, callback: Box<dyn Callbacks>);
+    fn connect(&mut self);
+}
+
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
     initialised: bool,
@@ -667,13 +672,15 @@ impl AgoraSdkEvents {
             events: None,
         }
     }
+}
 
-    pub fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
+impl IAgoraSdkEvents for AgoraSdkEvents {
+    fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
         self.events = Some(callback);
         self.connect();
     }
 
-    pub fn connect(&mut self) {
+    fn connect(&mut self) {
         if self.initialised {
             return;
         }
