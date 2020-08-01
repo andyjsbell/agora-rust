@@ -675,11 +675,10 @@ impl AgoraSdkEvents {
 
 impl IAgoraSdkEvents for AgoraSdkEvents {
     fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
-        self.events = Some(callback);
         if self.initialised {
             return;
         }
-        
+        self.events = Some(callback);
         self.initialised = true;
         
         let inst_ptr: &dyn CallbackTrait = self as &dyn CallbackTrait;    
