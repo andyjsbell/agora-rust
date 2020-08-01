@@ -625,7 +625,7 @@ pub trait Emitter {
 
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
-    events: Option<Box<dyn Listener>>,
+    listener: Option<Box<dyn Listener>>,
 }
 
 pub trait Listener {
@@ -637,21 +637,21 @@ pub trait Listener {
 impl CallbackTrait for AgoraSdkEvents {
     
     fn on_error(&mut self, error: u32, stat_code: u32) {
-        if self.events.is_some() {
-            self.events.as_mut().unwrap().error(error, stat_code);
+        if self.listener.is_some() {
+            self.listener.as_mut().unwrap().error(error, stat_code);
         }
     }
 
     fn on_user_joined(&mut self, uid: u32) {
         println!("on user joined");
-        if self.events.is_some() {
-            self.events.as_mut().unwrap().joined(uid);
+        if self.listener.is_some() {
+            self.listener.as_mut().unwrap().joined(uid);
         }
     }
 
     fn on_user_left(&mut self, uid: u32) {
-        if self.events.is_some() {
-            self.events.as_mut().unwrap().left(uid);
+        if self.listener.is_some() {
+            self.listener.as_mut().unwrap().left(uid);
         }
     }
 }
@@ -666,17 +666,17 @@ impl AgoraSdkEvents {
 
         AgoraSdkEvents {
             rawptr,
-            events: None,
+            listener: None,
         }
     }
 }
 
 impl Emitter for AgoraSdkEvents {
     fn set_callback(&mut self, callback: Box<dyn Listener>) {
-        if self.events.is_some() {
+        if self.listener.is_some() {
             return;
         }
-        self.events = Some(callback);
+        self.listener = Some(callback);
         
         let inst_ptr: &dyn CallbackTrait = self as &dyn CallbackTrait;    
         let rawptr = self.rawptr;
