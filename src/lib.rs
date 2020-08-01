@@ -625,7 +625,6 @@ pub trait IAgoraSdkEvents {
 
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
-    initialised: bool,
     events: Option<Box<dyn Callbacks>>,
 }
 
@@ -667,7 +666,6 @@ impl AgoraSdkEvents {
 
         AgoraSdkEvents {
             rawptr,
-            initialised: false,
             events: None,
         }
     }
@@ -675,11 +673,10 @@ impl AgoraSdkEvents {
 
 impl IAgoraSdkEvents for AgoraSdkEvents {
     fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
-        if self.initialised {
+        if self.events.is_some() {
             return;
         }
         self.events = Some(callback);
-        self.initialised = true;
         
         let inst_ptr: &dyn CallbackTrait = self as &dyn CallbackTrait;    
         let rawptr = self.rawptr;
