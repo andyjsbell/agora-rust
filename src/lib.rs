@@ -720,9 +720,9 @@ impl AgoraSdk {
         }
     }
 
-    pub fn set_handler(&mut self, events: &AgoraSdkEvents) {
+    pub fn set_handler(&mut self, emitter: &Emitter) {
         unsafe {
-            let handler = events.rawptr;
+            let handler = emitter.raw_ptr();
             let me = self.sdk;
             cpp!([me as "agora::AgoraSdk*", handler as "agora::recording::IRecordingEngineEventHandler*"] {
                 me->setHandler(handler);
