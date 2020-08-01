@@ -619,7 +619,7 @@ cpp!{{
     };    
 }}
 
-pub trait IAgoraSdkEvents {
+pub trait Emitter {
     fn set_callback(&mut self, callback: Box<dyn Callbacks>);
 }
 
@@ -671,7 +671,7 @@ impl AgoraSdkEvents {
     }
 }
 
-impl IAgoraSdkEvents for AgoraSdkEvents {
+impl Emitter for AgoraSdkEvents {
     fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
         if self.events.is_some() {
             return;
