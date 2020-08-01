@@ -619,12 +619,16 @@ cpp!{{
     };    
 }}
 
-pub trait Emitter {
+pub trait RawPtr {
+    fn raw_ptr(&self) -> *mut u32;
+}
+
+pub trait Emitter: RawPtr {
     fn set_callback(&mut self, callback: Box<dyn Listener>);
 }
 
 pub struct AgoraSdkEvents {
-    pub rawptr: *mut u32,
+    rawptr: *mut u32,
     listener: Option<Box<dyn Listener>>,
 }
 
@@ -671,7 +675,14 @@ impl AgoraSdkEvents {
     }
 }
 
+impl RawPtr for AgoraSdkEvents {
+    fn raw_ptr(&self) -> *mut u32 {
+        return self.rawptr;
+    }
+}
+
 impl Emitter for AgoraSdkEvents {
+
     fn set_callback(&mut self, callback: Box<dyn Listener>) {
         if self.listener.is_some() {
             return;
