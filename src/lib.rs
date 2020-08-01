@@ -707,6 +707,16 @@ pub struct AgoraSdk {
 
 unsafe impl Send for AgoraSdk {}
 
+trait IAgoraSdk {
+    fn set_handler(&mut self, emitter: &dyn Emitter);
+    fn set_keep_last_frame(&self, keep : bool);
+    fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool;
+    fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool);
+    fn leave_channel(&self) -> bool;
+    fn set_video_mixing_layout(&self, layout: &Layout) -> u32;
+    fn release(&self) -> bool;
+}
+
 impl AgoraSdk {
     pub fn new() -> Self {
         let sdk = unsafe {
@@ -720,7 +730,7 @@ impl AgoraSdk {
         }
     }
 
-    pub fn set_handler(&mut self, emitter: &Emitter) {
+    pub fn set_handler(&mut self, emitter: &dyn Emitter) {
         unsafe {
             let handler = emitter.raw_ptr();
             let me = self.sdk;
