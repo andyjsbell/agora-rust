@@ -620,15 +620,15 @@ cpp!{{
 }}
 
 pub trait Emitter {
-    fn set_callback(&mut self, callback: Box<dyn Callbacks>);
+    fn set_callback(&mut self, callback: Box<dyn Listener>);
 }
 
 pub struct AgoraSdkEvents {
     pub rawptr: *mut u32,
-    events: Option<Box<dyn Callbacks>>,
+    events: Option<Box<dyn Listener>>,
 }
 
-pub trait Callbacks {
+pub trait Listener {
     fn error(&self, error: u32, stat_code: u32);
     fn joined(&mut self, uid: u32);
     fn left(&mut self, uid: u32);
@@ -672,7 +672,7 @@ impl AgoraSdkEvents {
 }
 
 impl Emitter for AgoraSdkEvents {
-    fn set_callback(&mut self, callback: Box<dyn Callbacks>) {
+    fn set_callback(&mut self, callback: Box<dyn Listener>) {
         if self.events.is_some() {
             return;
         }
@@ -838,8 +838,8 @@ mod tests {
     use std::cell::RefCell;
     #[test]
     fn callback() {
-        struct TestCallbacks {}
-        impl Callbacks for TestCallbacks {
+        struct TestListener {}
+        impl Listener for TestListener {
             fn error(&self, error: u32, stat_code: u32) {
                 println!("on_error -> {} {}", error, stat_code);
                 assert!(error == 0, "error received");
@@ -852,7 +852,7 @@ mod tests {
             }
         }
 
-        let test: Option<Box<dyn Callbacks>> = Some(Box::new(TestCallbacks{}));
+        let test: Option<Box<dyn Listener>> = Some(Box::new(TestListener{}));
         if let Some(mut b) = test {
             b.joined(100);
         }
@@ -864,11 +864,11 @@ mod tests {
             sdk: Rc<RefCell<AgoraSdk>>,
         };
 
-        struct RecorderCallbacks {
+        struct RecorderListener {
             sdk: Rc<RefCell<AgoraSdk>>,
         }
 
-        impl Callbacks for RecorderCallbacks {
+        impl Listener for RecorderListener {
             fn error(&self, error: u32, stat_code: u32) {
                 println!("on_error -> {} {}", error, stat_code);
                 assert!(error == 0, "error received");
@@ -903,7 +903,7 @@ mod tests {
             pub fn start(&mut self) {
                 
                 let mut events = AgoraSdkEvents::new();
-                let callbacks = RecorderCallbacks {
+                let callbacks = RecorderListener {
                     sdk: self.sdk.clone(),
                 };
                 events.set_callback(Box::new(callbacks));
