@@ -524,7 +524,6 @@ cpp!{{
     
         virtual void onUserJoined(agora::linuxsdk::uid_t uid, agora::linuxsdk::UserJoinInfos &infos) {
             (void)infos;
-            std::cout << "callback:" << &callback << std::endl;
             rust!(OnUserJoinedImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", uid: u32 as "int"] {
                 callback.on_user_joined(uid)
             });
@@ -651,7 +650,6 @@ impl CallbackTrait for AgoraSdkEvents {
     }
 
     fn on_user_joined(&mut self, uid: u32) {
-        println!("on user joined");
         if self.listener.is_some() {
             self.listener.as_mut().unwrap().joined(uid);
         }
@@ -704,7 +702,6 @@ impl Emitter for AgoraSdkEvents {
         unsafe {
             cpp!([  rawptr as "AgoraSdkEvents*",
                     inst_ptr as "CallbackPtr"] {
-                std::cout << "callback set as:" << &inst_ptr << std::endl;
                 rawptr->callback = inst_ptr;
             })
         }
