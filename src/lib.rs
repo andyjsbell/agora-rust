@@ -719,7 +719,7 @@ pub struct AgoraSdk {
 unsafe impl Send for AgoraSdk {}
 
 pub trait IAgoraSdk: RawPtr + Send {
-    fn set_handler<E: 'static + Emitter>(&mut self, emitter: E);
+    fn set_handler<E: 'static + Emitter>(&mut self, emitter: &E);
     fn set_keep_last_frame(&self, keep : bool);
     fn create_channel(&self, app_id: &str, channel_key: &str, name: &str, uid: u32, config: &Config) -> bool;
     fn update_mix_mode_setting(&self, width: u32, height: u32, is_video_mix: bool);
@@ -749,7 +749,7 @@ impl RawPtr for AgoraSdk {
 }
 
 impl IAgoraSdk for AgoraSdk {
-    fn set_handler<E: Emitter>(&mut self, emitter: E) {
+    fn set_handler<E: Emitter>(&mut self, emitter: &E) {
         unsafe {
             let handler = emitter.raw_ptr();
             let me = self.raw_ptr();
@@ -954,7 +954,7 @@ mod tests {
                 };
                 events.set_callback(Box::new(callbacks));
 
-                (*self.sdk.borrow_mut()).set_handler(events);
+                (*self.sdk.borrow_mut()).set_handler(&events);
         
                 // Set up configuration file for recordings
                 let path = agora_core_path();
