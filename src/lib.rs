@@ -515,7 +515,7 @@ cpp!{{
         virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
             rust!(OnJoinChannelSuccessImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", channelId: *const i8 as "const char*", uid : u32 as "int"] {
                 let channelId = unsafe {CStr::from_ptr(channelId)};
-                // callback.on_channel_join_success(channelId.to_str().unwrap_or(""), uid)
+                callback.on_channel_join_success(channelId.to_str().unwrap_or(""), uid)
             });
         }
         virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
