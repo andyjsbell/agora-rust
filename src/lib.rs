@@ -492,7 +492,8 @@ impl Layout {
 pub trait CallbackTrait {
     fn on_error(&mut self, error: u32, stat_code: u32);
     fn on_user_joined(&mut self, uid: u32);
-    fn on_user_left(&mut self, uid: u32);    
+    fn on_user_left(&mut self, uid: u32); 
+    fn on_channel_join_success(&mut self, channel: &str, uid: u32);   
 }
 
 cpp!{{ 
@@ -512,8 +513,10 @@ cpp!{{
             (void)warn;
         }
         virtual void onJoinChannelSuccess(const char * channelId, agora::linuxsdk::uid_t uid) {
-            (void)channelId;
-            (void)uid;
+            rust!(OnJoinChannelSuccessImpl [callback : &mut dyn CallbackTrait as "CallbackPtr", channelId: *const i8 as "const char*", uid : u32 as "int"] {
+                let channelId = unsafe {CStr::from_ptr(channelId)};
+                // callback.on_channel_join_success(channelId.to_str().unwrap_or(""), uid)
+            });
         }
         virtual void onLeaveChannel(agora::linuxsdk::LEAVE_PATH_CODE code) {
             (void)code;
@@ -636,6 +639,7 @@ pub trait Listener {
     fn error(&self, error: u32, stat_code: u32);
     fn joined(&mut self, uid: u32);
     fn left(&mut self, uid: u32);
+    fn channel_joined(&mut self, channel: String, uid: u32);
 }
 
 impl CallbackTrait for AgoraSdkEvents {
@@ -656,6 +660,12 @@ impl CallbackTrait for AgoraSdkEvents {
     fn on_user_left(&mut self, uid: u32) {
         if self.listener.is_some() {
             self.listener.as_mut().unwrap().left(uid);
+        }
+    }
+
+    fn on_channel_join_success(&mut self, channel: &str, uid: u32) {
+        if self.listener.is_some() {
+            self.listener.as_mut().unwrap().channel_joined(channel.to_string(), uid);
         }
     }
 }
@@ -880,6 +890,9 @@ mod tests {
             fn left(&mut self, uid: u32) {
                 println!("user left");
             }
+            fn channel_joined(&mut self, channel: String, uid: u32) {
+                println!("channel joined {} {}", channel, uid);
+            }
         }
 
         let test: Option<Box<dyn Listener>> = Some(Box::new(TestListener{}));
@@ -917,6 +930,9 @@ mod tests {
             }
             fn left(&mut self, uid: u32) {
                 println!("user left");
+            }
+            fn channel_joined(&mut self, channel: String, uid: u32) {
+                println!("channel joined {} {}", channel, uid);
             }
         }
 
