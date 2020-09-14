@@ -611,13 +611,14 @@ pub trait RawPtr {
     fn raw_ptr(&self) -> *mut u32;
 }
 
-pub trait Emitter: RawPtr {
-    fn set_callback(&mut self, callback: Box<dyn Listener>);
+pub trait Emitter<L>: RawPtr {
+    fn set_callback(&mut self, callback: Box<L>);
 }
 
-pub struct AgoraSdkEvents {
+#[derive(Clone)]
+pub struct AgoraSdkEvents<L: Listener> {
     rawptr: *mut u32,
-    listener: Option<Box<dyn Listener>>,
+    listener: Option<Box<L>>,
 }
 
 pub trait Listener {
@@ -627,7 +628,7 @@ pub trait Listener {
     fn channel_joined(&mut self, channel: String, uid: u32);
 }
 
-impl CallbackTrait for AgoraSdkEvents {
+impl<L: Listener> CallbackTrait for AgoraSdkEvents<L> {
     fn on_error(&mut self, error: u32, stat_code: u32) {
         if self.listener.is_some() {
             self.listener.as_mut().unwrap().error(error, stat_code);
@@ -656,7 +657,7 @@ impl CallbackTrait for AgoraSdkEvents {
     }
 }
 
-impl AgoraSdkEvents {
+impl<L: Listener> AgoraSdkEvents<L> {
     pub fn new() -> Self {
         let rawptr = unsafe {
             cpp!([] -> *mut u32  as "agora::recording::IRecordingEngineEventHandler*" {
@@ -671,14 +672,14 @@ impl AgoraSdkEvents {
     }
 }
 
-impl RawPtr for AgoraSdkEvents {
+impl<L: Listener> RawPtr for AgoraSdkEvents<L> {
     fn raw_ptr(&self) -> *mut u32 {
         return self.rawptr;
     }
 }
 
-impl Emitter for AgoraSdkEvents {
-    fn set_callback(&mut self, callback: Box<dyn Listener>) {
+impl<L: Listener> Emitter<L> for AgoraSdkEvents<L> {
+    fn set_callback(&mut self, callback: Box<L>) {
         if self.listener.is_some() {
             return;
         }
@@ -696,14 +697,15 @@ impl Emitter for AgoraSdkEvents {
 }
 
 #[derive(Clone)]
-pub struct AgoraSdk {
+pub struct AgoraSdk<L: Listener> {
     sdk: *mut u32,
+    events: AgoraSdkEvents<L>,
 }
 
-unsafe impl Send for AgoraSdk {}
+unsafe impl<L: Listener> Send for AgoraSdk<L> {}
 
-pub trait IAgoraSdk: RawPtr + Send {
-    fn set_handler<E: 'static + Emitter>(&mut self, emitter: &E);
+pub trait IAgoraSdk<L>: RawPtr + Send {
+    fn set_handler<E: 'static + Emitter<L>>(&mut self, emitter: &E);
     fn set_keep_last_frame(&self, keep: bool);
     fn create_channel(
         &self,
@@ -719,7 +721,7 @@ pub trait IAgoraSdk: RawPtr + Send {
     fn release(&self) -> bool;
 }
 
-impl AgoraSdk {
+impl<L: Listener> AgoraSdk<L> {
     pub fn new() -> Self {
         let sdk = unsafe {
             cpp!([] -> *mut u32  as "agora::AgoraSdk*" {
@@ -727,18 +729,19 @@ impl AgoraSdk {
             })
         };
 
-        AgoraSdk { sdk }
+        let events = AgoraSdkEvents::<L>::new();
+        AgoraSdk { sdk, events }
     }
 }
 
-impl RawPtr for AgoraSdk {
+impl<L: Listener> RawPtr for AgoraSdk<L> {
     fn raw_ptr(&self) -> *mut u32 {
         return self.sdk;
     }
 }
 
-impl IAgoraSdk for AgoraSdk {
-    fn set_handler<E: Emitter>(&mut self, emitter: &E) {
+impl<L: Listener> IAgoraSdk<L> for AgoraSdk<L> {
+    fn set_handler<E: Emitter<L>>(&mut self, emitter: &E) {
         unsafe {
             let handler = emitter.raw_ptr();
             let me = self.raw_ptr();
@@ -827,7 +830,7 @@ impl IAgoraSdk for AgoraSdk {
     }
 }
 
-impl Drop for AgoraSdk {
+impl<L: Listener> Drop for AgoraSdk<L> {
     fn drop(&mut self) {
         self.leave_channel();
         let me = self.raw_ptr();
@@ -903,11 +906,11 @@ mod tests {
     #[test]
     fn recorder_create() {
         struct Recorder {
-            sdk: Rc<RefCell<AgoraSdk>>,
+            sdk: Rc<RefCell<AgoraSdk<RecorderListener>>>,
         };
 
         struct RecorderListener {
-            sdk: Rc<RefCell<AgoraSdk>>,
+            sdk: Rc<RefCell<AgoraSdk<RecorderListener>>>,
         }
 
         impl Listener for RecorderListener {
@@ -938,7 +941,7 @@ mod tests {
                 let sdk = AgoraSdk::new();
                 let sdk = Rc::new(RefCell::new(sdk));
 
-                Recorder { sdk }
+                Self { sdk }
             }
 
             pub fn start(&mut self) {
@@ -1002,13 +1005,27 @@ mod tests {
     }
     #[test]
     fn recorder_release() {
-        let sdk = AgoraSdk::new();
+        struct RecorderListener {};
+        impl Listener for RecorderListener {
+            fn error(&self, _error: u32, _stat_code: u32) {}
+            fn joined(&mut self, _uid: u32) {}
+            fn left(&mut self, _uid: u32) {}
+            fn channel_joined(&mut self, _channel: String, _uid: u32) {}
+        }
+        let sdk = AgoraSdk::<RecorderListener>::new();
         assert!(sdk.release());
     }
 
     #[test]
     fn recorder_keep_last_frame() {
-        let sdk = AgoraSdk::new();
+        struct RecorderListener {};
+        impl Listener for RecorderListener {
+            fn error(&self, _error: u32, _stat_code: u32) {}
+            fn joined(&mut self, _uid: u32) {}
+            fn left(&mut self, _uid: u32) {}
+            fn channel_joined(&mut self, _channel: String, _uid: u32) {}
+        }
+        let sdk = AgoraSdk::<RecorderListener>::new();
         sdk.set_keep_last_frame(true);
     }
 
