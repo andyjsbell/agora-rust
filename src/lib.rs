@@ -695,15 +695,14 @@ impl Emitter for AgoraSdkEvents {
     }
 }
 
-#[derive(Clone)]
 pub struct AgoraSdk {
     sdk: *mut u32,
+    events: AgoraSdkEvents,
 }
 
 unsafe impl Send for AgoraSdk {}
 
 pub trait IAgoraSdk: RawPtr + Send {
-    fn set_handler<E: 'static + Emitter>(&mut self, emitter: &E);
     fn set_keep_last_frame(&self, keep: bool);
     fn create_channel(
         &self,
@@ -717,6 +716,7 @@ pub trait IAgoraSdk: RawPtr + Send {
     fn leave_channel(&self) -> bool;
     fn set_video_mixing_layout(&self, layout: &Layout) -> u32;
     fn release(&self) -> bool;
+    fn set_listener(&mut self, listener: Box<dyn Listener>);
 }
 
 impl AgoraSdk {
@@ -727,7 +727,10 @@ impl AgoraSdk {
             })
         };
 
-        AgoraSdk { sdk }
+        AgoraSdk {
+            sdk,
+            events: AgoraSdkEvents::new(),
+        }
     }
 }
 
@@ -738,14 +741,15 @@ impl RawPtr for AgoraSdk {
 }
 
 impl IAgoraSdk for AgoraSdk {
-    fn set_handler<E: Emitter>(&mut self, emitter: &E) {
+    fn set_listener(&mut self, listener: Box<dyn Listener>) {
         unsafe {
-            let handler = emitter.raw_ptr();
+            let handler = self.events.raw_ptr();
             let me = self.raw_ptr();
             cpp!([me as "agora::AgoraSdk*", handler as "agora::recording::IRecordingEngineEventHandler*"] {
                 me->setHandler(handler);
             })
         };
+        self.events.set_callback(listener);
     }
 
     fn set_keep_last_frame(&self, keep: bool) {
@@ -942,13 +946,10 @@ mod tests {
             }
 
             pub fn start(&mut self) {
-                let mut events = AgoraSdkEvents::new();
-                let callbacks = RecorderListener {
+                let listener = RecorderListener {
                     sdk: self.sdk.clone(),
                 };
-                events.set_callback(Box::new(callbacks));
-
-                (*self.sdk.borrow_mut()).set_handler(&events);
+                (*self.sdk.borrow_mut()).set_listener(Box::new(listener));
                 // Set up configuration file for recordings
                 let path = agora_core_path().unwrap();
                 let app_id = app_id().unwrap();
