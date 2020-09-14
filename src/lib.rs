@@ -839,31 +839,31 @@ impl Drop for AgoraSdk {
     }
 }
 
-pub fn agora_core_path() -> String {
+pub fn agora_core_path() -> Result<String, String> {
     match env::var("AGORA_CORE_PATH") {
-        Ok(path) => path,
-        _ => "".to_string(),
+        Ok(path) => Ok(path),
+        _ => Err("AGORA_CORE_PATH not set".to_string()),
     }
 }
 
-pub fn app_id() -> String {
+pub fn app_id() -> Result<String, String> {
     match env::var("APP_ID") {
-        Ok(id) => id,
-        _ => "".to_string(),
+        Ok(id) => Ok(id),
+        _ => Err("APP_ID not set".to_string()),
     }
 }
 
-pub fn channel() -> String {
+pub fn channel() -> Result<String, String> {
     match env::var("CHANNEL") {
-        Ok(channel) => channel,
-        _ => "".to_string(),
+        Ok(channel) => Ok(channel),
+        _ => Err("CHANNEL not set".to_string()),
     }
 }
 
-pub fn token() -> String {
+pub fn token() -> Result<String, String> {
     match env::var("TOKEN") {
-        Ok(token) => token,
-        _ => "".to_string(),
+        Ok(token) => Ok(token),
+        _ => Err("".to_string()),
     }
 }
 
@@ -950,14 +950,10 @@ mod tests {
 
                 (*self.sdk.borrow_mut()).set_handler(&events);
                 // Set up configuration file for recordings
-                let path = agora_core_path();
-                assert!(path != "", "AGORA_CORE_PATH not set!");
-                let app_id = app_id();
-                assert!(app_id != "", "APP_ID not set!");
-                let channel = channel();
-                assert!(channel != "", "CHANNEL not set!");
-                let token = token();
-                assert!(token != "", "TOKEN not set!");
+                let path = agora_core_path().unwrap();
+                let app_id = app_id().unwrap();
+                let channel = channel().unwrap();
+                let token = token().unwrap();
                 let cwd = env::current_dir().expect("current working directory");
                 let output = format!("{}/{}", cwd.display(), Uuid::new_v4());
                 fs::create_dir(&output).expect("create directory for recordings");
